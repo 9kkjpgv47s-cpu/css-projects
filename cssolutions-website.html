@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalyst Strategy Solutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================
+           CSS VARIABLES - DARK PROFESSIONAL THEME
+           ============================================ */
+        :root {
+            --bg-primary: #151520;
+            --bg-secondary: #1e1e2a;
+            --bg-card: #262635;
+            --bg-card-hover: #2e2e40;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a0a0a8;
+            --text-muted: #6b6b75;
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --accent-blue-subtle: rgba(59, 130, 246, 0.1);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-color-hover: rgba(255, 255, 255, 0.15);
+            --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+            --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-serif: 'IBM Plex Serif', Georgia, serif;
+        }
+
+        /* ============================================
+           RESET & BASE
+           ============================================ */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ============================================
+           FLOWING BACKGROUND SYSTEM
+           ============================================ */
+        
+        /* Slow drift animation for background */
+        @keyframes gradientDrift {
+            0% {
+                background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%;
+            }
+            50% {
+                background-position: 100% 50%, 0% 50%, 100% 50%, 0% 50%, 50% 50%;
+            }
+            100% {
+                background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%;
+            }
+        }
+
+        /* Base gradient layer - flows through entire page */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 30%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 70% 50% at 10% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 40% at 90% 90%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse 80% 60% at 50% 50%, rgba(30, 41, 59, 0.8) 0%, transparent 70%);
+            background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+            animation: gradientDrift 30s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        /* Subtle grain texture overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Accent glow spots that appear at section transitions */
+        .glow-spot {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .glow-spot-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(59, 130, 246, 0.1);
+            top: -100px;
+            right: -100px;
+        }
+
+        .glow-spot-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(99, 102, 241, 0.08);
+            bottom: -50px;
+            left: -50px;
+        }
+
+        /* Section-specific gradient accents */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 60% 40% at 50% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .services::before,
+        .results::before,
+        .beliefs::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, 
+                rgba(30, 30, 42, 0) 0%, 
+                rgba(30, 30, 42, 0.5) 50%, 
+                rgba(30, 30, 42, 0) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .services,
+        .results,
+        .beliefs {
+            position: relative;
+        }
+
+        .services > *,
+        .results > *,
+        .beliefs > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .bridge::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .tiers::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 50% 50% at 30% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 50% at 70% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .tiers {
+            position: relative;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 60% at 50% 100%, rgba(59, 130, 246, 0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 20% 80%, rgba(99, 102, 241, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(30, 30, 42, 0) 0%, rgba(21, 21, 32, 0.8) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        footer {
+            position: relative;
+        }
+
+        footer > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================
+           TYPOGRAPHY
+           ============================================ */
+        h1, h2, h3, h4 {
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+        h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+        h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+
+        p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* ============================================
+           LAYOUT
+           ============================================ */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 2.5rem 0;
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ============================================
+           NAVIGATION
+           ============================================ */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.25rem 0;
+            background: rgba(21, 21, 32, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        /* Mobile nav toggle */
+        .nav-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .nav-toggle span {
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            transition: 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                flex-direction: column;
+                background: var(--bg-secondary);
+                padding: 1.5rem 2rem;
+                gap: 1.5rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .nav-links.active { display: flex; }
+        }
+
+        /* ============================================
+           HERO SECTION
+           ============================================ */
+        .hero {
+            min-height: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 5rem 2rem 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            max-width: 900px;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero p {
+            max-width: 600px;
+            font-size: 1.15rem;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 1s ease-out 0.2s both;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.75rem;
+            background: var(--gradient-blue);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+            animation: fadeInUp 1s ease-out 0.4s both;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .scroll-indicator {
+            display: none;
+        }
+
+        /* ============================================
+           SERVICES SECTION
+           ============================================ */
+        .services {
+            background: rgba(30, 30, 42, 0.4);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2.5rem 0;
+            overflow: hidden;
+        }
+
+        .services-intro {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 1.5rem;
+            padding: 0 2rem;
+        }
+
+        .services-intro h2 {
+            margin-bottom: 0.5rem;
+            font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+        }
+
+        .services-intro p {
+            font-size: 0.95rem;
+        }
+
+        .services-wrapper {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Services nav strip for mobile */
+        .services-nav {
+            display: none;
+        }
+
+        .services-grid {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0 1rem;
+        }
+
+        .service-card {
+            background: rgba(38, 38, 53, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            flex: 0 0 260px;
+            min-width: 260px;
+        }
+
+        .service-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-color-hover);
+        }
+
+        .service-card h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .service-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 900px) {
+            .services-nav {
+                display: flex;
+                justify-content: center;
+                gap: 0.35rem;
+                margin-bottom: 1rem;
+                padding: 0 1rem;
+                flex-wrap: wrap;
+            }
+
+            .services-nav-item {
+                font-size: 0.7rem;
+                color: var(--text-muted);
+                padding: 0.35rem 0.6rem;
+                border-radius: 20px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: transparent;
+                border: 1px solid transparent;
+                white-space: nowrap;
+            }
+
+            .services-nav-item.active {
+                color: var(--text-primary);
+                background: var(--bg-card);
+                border-color: var(--accent-blue);
+            }
+
+            .services-grid {
+                justify-content: flex-start;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding: 0.5rem 10vw 1rem;
+            }
+
+            .services-grid::-webkit-scrollbar {
+                display: none;
+            }
+
+            .service-card {
+                flex: 0 0 75vw;
+                min-width: 75vw;
+                max-width: 300px;
+                scroll-snap-align: center;
+                opacity: 0.4;
+                transform: scale(0.92);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+
+            .service-card.in-view {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            @keyframes swipeHintServices {
+                0% { transform: translateX(0); }
+                20% { transform: translateX(-30px); }
+                40% { transform: translateX(30px); }
+                60% { transform: translateX(-15px); }
+                80% { transform: translateX(15px); }
+                100% { transform: translateX(0); }
+            }
+
+            .services-grid.hint-active {
+                animation: swipeHintServices 1.2s ease-in-out;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .service-card {
+                flex: 0 0 80vw;
+                min-width: 80vw;
+            }
+            
+            .services-grid {
+                padding: 0.5rem 8vw 1rem;
+            }
+
+            .services-nav-item {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.5rem;
+            }
+        }
+
+        /* ============================================
+           THE BRIDGE SECTION (NEW - CONDENSED)
+           ============================================ */
+        .bridge {
+            position: relative;
+        }
+
+        .bridge-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .bridge h2 {
+            margin-bottom: 1.25rem;
+        }
+
+        .bridge-text {
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+        }
+
+        .bridge-text:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .bridge-highlight {
+            background: rgba(38, 38, 53, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-left: 3px solid var(--accent-blue);
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .bridge-highlight p {
+            font-family: var(--font-serif);
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            font-style: italic;
+        }
+
+        /* ============================================
+           RESULTS SECTION
+           ============================================ */
+        .results {
+            background: rgba(30, 30, 42, 0.4);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2.5rem 0;
+            overflow: hidden;
+        }
+
+        .results h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .results-wrapper {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Results nav strip for mobile */
+        .results-nav {
+            display: none;
+        }
+
+        .results-grid {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0 1rem;
+        }
+
+        .result-card {
+            background: rgba(38, 38, 53, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            text-align: center;
+            padding: 1.5rem 1.25rem;
+            transition: all 0.3s ease;
+            flex: 0 0 200px;
+            min-width: 200px;
+        }
+
+        .result-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-color-hover);
+        }
+
+        .result-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            line-height: 1;
+            margin-bottom: 0.35rem;
+        }
+
+        .result-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.35rem;
+        }
+
+        .result-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 900px) {
+            .results-nav {
+                display: flex;
+                justify-content: center;
+                gap: 0.35rem;
+                margin-bottom: 1rem;
+                padding: 0 1rem;
+            }
+
+            .results-nav-item {
+                font-size: 0.7rem;
+                color: var(--text-muted);
+                padding: 0.35rem 0.6rem;
+                border-radius: 20px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: transparent;
+                border: 1px solid transparent;
+                white-space: nowrap;
+            }
+
+            .results-nav-item.active {
+                color: var(--text-primary);
+                background: var(--bg-card);
+                border-color: var(--accent-blue);
+            }
+
+            .results-grid {
+                justify-content: flex-start;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding: 0.5rem 10vw 1rem;
+            }
+
+            .results-grid::-webkit-scrollbar {
+                display: none;
+            }
+
+            .result-card {
+                flex: 0 0 70vw;
+                min-width: 70vw;
+                max-width: 280px;
+                scroll-snap-align: center;
+                opacity: 0.4;
+                transform: scale(0.92);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+
+            .result-card.in-view {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            @keyframes swipeHintResults {
+                0% { transform: translateX(0); }
+                20% { transform: translateX(-30px); }
+                40% { transform: translateX(30px); }
+                60% { transform: translateX(-15px); }
+                80% { transform: translateX(15px); }
+                100% { transform: translateX(0); }
+            }
+
+            .results-grid.hint-active {
+                animation: swipeHintResults 1.2s ease-in-out;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .result-card {
+                flex: 0 0 75vw;
+                min-width: 75vw;
+            }
+            
+            .results-grid {
+                padding: 0.5rem 10vw 1rem;
+            }
+        }
+
+        /* ============================================
+           TIERS SECTION (NO PRICING)
+           ============================================ */
+        .tiers {
+            padding: 2.5rem 0;
+            overflow: hidden;
+        }
+
+        .tiers h2 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .tiers-intro {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 1.5rem;
+            padding: 0 2rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .tiers-wrapper {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .tiers-grid {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .tier-card {
+            background: rgba(38, 38, 53, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+            flex: 0 0 280px;
+            min-width: 280px;
+        }
+
+        .tier-card:hover {
+            border-color: var(--border-color-hover);
+            background: rgba(46, 46, 64, 0.8);
+        }
+
+        .tier-card.featured {
+            border-color: var(--accent-blue);
+            transform: scale(1.02);
+        }
+
+        .tier-card.featured:hover {
+            transform: scale(1.04);
+        }
+
+        .tier-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient-blue);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tier-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: var(--text-primary);
+        }
+
+        .tier-tagline {
+            color: var(--accent-blue);
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .tier-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .tier-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        /* Hover zones for desktop auto-scroll */
+        .tier-hover-zone {
+            display: none;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .tier-hover-zone.left {
+            left: 0;
+            background: linear-gradient(to right, rgba(21, 21, 32, 0.5), transparent);
+        }
+
+        .tier-hover-zone.right {
+            right: 0;
+            background: linear-gradient(to left, rgba(21, 21, 32, 0.5), transparent);
+        }
+
+        /* Mobile: horizontal scroll */
+        @media (max-width: 900px) {
+            .tiers-wrapper {
+                padding: 0;
+                overflow: hidden;
+            }
+
+            /* Mini preview strip */
+            .tier-nav {
+                display: flex;
+                justify-content: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                padding: 0 1rem;
+            }
+
+            .tier-nav-item {
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                padding: 0.4rem 0.75rem;
+                border-radius: 20px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: transparent;
+                border: 1px solid transparent;
+                white-space: nowrap;
+            }
+
+            .tier-nav-item.active {
+                color: var(--text-primary);
+                background: var(--bg-card);
+                border-color: var(--accent-blue);
+            }
+
+            .tier-nav-item:hover {
+                color: var(--text-secondary);
+            }
+
+            .tiers-grid {
+                justify-content: flex-start;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding: 0.5rem 10vw 1rem;
+                gap: 1rem;
+            }
+
+            .tiers-grid::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tier-card {
+                flex: 0 0 75vw;
+                min-width: 75vw;
+                max-width: 320px;
+                scroll-snap-align: center;
+                opacity: 0.4;
+                transform: scale(0.92);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+
+            .tier-card.in-view {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            .tier-card.featured {
+                transform: scale(0.92);
+            }
+
+            .tier-card.featured.in-view {
+                transform: scale(1);
+            }
+
+            .tier-card.featured:hover {
+                transform: scale(1);
+            }
+
+            /* Swipe hint animation */
+            @keyframes swipeHint {
+                0% { transform: translateX(0); }
+                20% { transform: translateX(-30px); }
+                40% { transform: translateX(30px); }
+                60% { transform: translateX(-15px); }
+                80% { transform: translateX(15px); }
+                100% { transform: translateX(0); }
+            }
+
+            .tiers-grid.hint-active {
+                animation: swipeHint 1.2s ease-in-out;
+            }
+
+            /* Hide old dots */
+            .tier-dots {
+                display: none;
+            }
+        }
+
+        @media (min-width: 901px) {
+            .tier-nav {
+                display: none;
+            }
+
+            .tier-dots {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .tier-card {
+                flex: 0 0 80vw;
+                min-width: 80vw;
+            }
+            
+            .tiers-grid {
+                padding: 0.5rem 8vw 1rem;
+            }
+        }
+
+        /* ============================================
+           BELIEFS SECTION
+           ============================================ */
+        .beliefs {
+            background: rgba(30, 30, 42, 0.4);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2.5rem 0;
+        }
+
+        .beliefs-content {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .beliefs h2 {
+            margin-bottom: 0.75rem;
+        }
+
+        .beliefs p {
+            font-size: 1.05rem;
+        }
+
+        /* ============================================
+           CTA SECTION
+           ============================================ */
+        .cta {
+            text-align: center;
+            padding: 2.5rem 2rem;
+            position: relative;
+        }
+
+        .cta h2 {
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta p {
+            max-width: 550px;
+            margin: 0 auto 1.25rem;
+            font-size: 1.05rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta .btn {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-email {
+            margin-top: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-email a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .cta-email a:hover {
+            color: var(--accent-blue);
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        footer {
+            background: transparent;
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+            position: relative;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .footer-logo-text {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .footer-contact {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-contact a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-contact a:hover {
+            color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            section { padding: 2rem 0; }
+            .hero { padding: 4.5rem 1.5rem 2rem; }
+            .hero h1 { font-size: 1.75rem; }
+            .hero p { font-size: 1rem; }
+            .footer-content { flex-direction: column; text-align: center; }
+            .footer-contact { flex-direction: column; gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================
+         NAVIGATION
+         ============================================ -->
+    <nav>
+        <div class="container">
+            <a href="#" class="logo">Catalyst Strategy Solutions</a>
+            <div class="nav-toggle" onclick="toggleNav()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#results">What We Deliver</a></li>
+                <li><a href="founder.html">Meet the Founder</a></li>
+                <li><a href="#cta">Schedule</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ============================================
+         HERO SECTION (KEPT AS-IS)
+         ============================================ -->
+    <section class="hero">
+        <h1>You built something real. Now build the operation to match.</h1>
+        <p>Your skills, your vision, your years of showing up—that's what got you here. We're here to build around what you've created, so it can grow without everything running through you.</p>
+        <a href="https://calendly.com/domje0624" class="btn">Schedule a Conversation</a>
+        <div class="scroll-indicator">Scroll</div>
+    </section>
+
+    <!-- ============================================
+         SERVICES SECTION
+         ============================================ -->
+    <section class="services">
+        <div class="services-intro reveal">
+            <h2>Project Management, Business Consultation, Marketing & Sales</h2>
+            <p>Four disciplines, one goal: building operations that run smoothly and scale sustainably.</p>
+        </div>
+        
+        <div class="services-wrapper">
+            <!-- Nav strip for mobile -->
+            <div class="services-nav">
+                <div class="services-nav-item active" data-service="0">Project Mgmt</div>
+                <div class="services-nav-item" data-service="1">Consultation</div>
+                <div class="services-nav-item" data-service="2">Marketing</div>
+                <div class="services-nav-item" data-service="3">Sales</div>
+            </div>
+            
+            <div class="services-grid" id="servicesGrid">
+                <div class="service-card reveal" data-service="0">
+                    <h3>Project Management</h3>
+                    <p>From workforce development to multi-site coordination, we bring order to moving parts. Timelines, milestones, accountability—the infrastructure that keeps projects on track.</p>
+                </div>
+                <div class="service-card reveal" data-service="1">
+                    <h3>Business Consultation</h3>
+                    <p>Strategic guidance grounded in real-world experience. We help you see what's working, what needs to change, and build the systems to make it happen.</p>
+                </div>
+                <div class="service-card reveal" data-service="2">
+                    <h3>Marketing</h3>
+                    <p>Get your name in front of the right people. Strategies that reflect who you are and reach customers who need what you do—no fluff, no wasted spend.</p>
+                </div>
+                <div class="service-card reveal" data-service="3">
+                    <h3>Sales</h3>
+                    <p>Turn conversations into contracts. A process that feels natural, closes consistently, and doesn't require you to become someone you're not.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         THE BRIDGE SECTION (NEW - CONDENSED)
+         ============================================ -->
+    <section class="bridge" id="approach">
+        <div class="container">
+            <div class="bridge-content">
+                <h2 class="reveal">The bridge from where you are to where you're going.</h2>
+                
+                <p class="bridge-text reveal">You've built something that works. The skills that got you here are real—years of showing up, solving problems, and earning the trust of everyone around you. That's not going anywhere.</p>
+                
+                <p class="bridge-text reveal">What we do is build the next layer. The systems, the structure, the support that lets your experience scale beyond just you. We take specialists and build around them—not over them. Your strengths become the foundation, and we construct the infrastructure that lets those strengths reach further.</p>
+                
+                <div class="bridge-highlight reveal">
+                    <p>Think of it this way: you've built a powerful engine. We help you build the transmission to put that power down, and the chassis to hold it all together.</p>
+                </div>
+                
+                <p class="bridge-text reveal">The result is a business where your people grow naturally. Where managers lead without leaning on you for every decision. Where the company keeps moving forward—not because you're holding it together, but because you built something that can stand on its own.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         RESULTS SECTION
+         ============================================ -->
+    <section class="results" id="results">
+        <h2 class="reveal">What CSS delivers.</h2>
+        
+        <div class="results-wrapper">
+            <!-- Nav strip for mobile -->
+            <div class="results-nav">
+                <div class="results-nav-item active" data-result="0">Retention</div>
+                <div class="results-nav-item" data-result="1">Sales</div>
+                <div class="results-nav-item" data-result="2">Profit</div>
+                <div class="results-nav-item" data-result="3">Momentum</div>
+            </div>
+            
+            <div class="results-grid" id="resultsGrid">
+                <div class="result-card reveal" data-result="0">
+                    <div class="result-number">100%</div>
+                    <div class="result-label">Retention on Teams I Lead</div>
+                    <div class="result-desc">People stay when systems support them and investment flows both ways.</div>
+                </div>
+                <div class="result-card reveal" data-result="1">
+                    <div class="result-number">10-20%</div>
+                    <div class="result-label">Sales Growth</div>
+                    <div class="result-desc">Typical results within the first six months. Clean operations let growth happen naturally.</div>
+                </div>
+                <div class="result-card reveal" data-result="2">
+                    <div class="result-number">10-30%</div>
+                    <div class="result-label">Profit Improvement</div>
+                    <div class="result-desc">From removing friction and waste—not by cutting corners on people.</div>
+                </div>
+                <div class="result-card reveal" data-result="3">
+                    <div class="result-number">Lasting</div>
+                    <div class="result-label">Momentum</div>
+                    <div class="result-desc">Systems that keep working after we're gone. Your independence is always the goal.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         TIERS SECTION (NO PRICING)
+         ============================================ -->
+    <section class="tiers" id="tiers">
+        <div class="container">
+            <h2 class="reveal">Choose the level of support that fits.</h2>
+            <p class="tiers-intro reveal">Every engagement includes phone access and virtual check-ins as needed. No long-term contracts—this works because of results, not paperwork.</p>
+            
+            <div class="tiers-wrapper">
+                <div class="tier-hover-zone left" id="tierHoverLeft"></div>
+                <div class="tier-hover-zone right" id="tierHoverRight"></div>
+                
+                <!-- Mini preview strip for mobile -->
+                <div class="tier-nav">
+                    <div class="tier-nav-item" data-tier="0">Foundation</div>
+                    <div class="tier-nav-item active" data-tier="1">Growth</div>
+                    <div class="tier-nav-item" data-tier="2">Transformation</div>
+                </div>
+                
+                <div class="tiers-grid" id="tiersGrid">
+                    <div class="tier-card reveal" data-tier="0">
+                        <div class="tier-badge">Try Us Out</div>
+                        <div class="tier-name">Foundation</div>
+                        <div class="tier-tagline">Clarity and direction.</div>
+                        <p class="tier-desc">Weekly meetings to identify friction, map what needs to change, and keep you moving forward. You're in the driver's seat—we're navigating beside you.</p>
+                        <div class="tier-footer">Best for owners who can execute but want a trusted partner to see what they can't.</div>
+                    </div>
+                    
+                    <div class="tier-card featured reveal" data-tier="1">
+                        <div class="tier-badge">Most Popular</div>
+                        <div class="tier-name">Growth</div>
+                        <div class="tier-tagline">Building alongside you.</div>
+                        <p class="tier-desc">Twice-weekly engagement to create systems, train your people, and build infrastructure that lasts. You focus on leading—we handle the construction.</p>
+                        <div class="tier-footer">Best for owners who see what needs to happen but need capable hands to make it real.</div>
+                    </div>
+                    
+                    <div class="tier-card featured reveal" data-tier="2">
+                        <div class="tier-badge">Highest Value</div>
+                        <div class="tier-name">Transformation</div>
+                        <div class="tier-tagline">Full partnership.</div>
+                        <p class="tier-desc">Embedded with your operation two to three times weekly, with on-call access for everything else. Whether navigating a storm or ready to scale, we're in it with you.</p>
+                        <div class="tier-footer">Best for owners in high-stakes moments—rapid growth, turnarounds, or building something that will outlast them.</div>
+                    </div>
+                </div>
+                
+                <div class="tier-dots">
+                    <div class="tier-dot active" data-tier="0"></div>
+                    <div class="tier-dot" data-tier="1"></div>
+                    <div class="tier-dot" data-tier="2"></div>
+                </div>
+            </div>
+    </section>
+
+    <!-- ============================================
+         BELIEFS SECTION (CONDENSED)
+         ============================================ -->
+    <section class="beliefs">
+        <div class="container">
+            <div class="beliefs-content reveal">
+                <h2>Our clients are partners, not invoices.</h2>
+                <p>We keep it simple. We fix problems, not symptoms. And we never forget that the person across the table took a risk to build something—and trusted us to help them take it further.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         CTA SECTION
+         ============================================ -->
+    <section class="cta" id="cta">
+        <div class="container">
+            <h2 class="reveal">Ready to build what comes next?</h2>
+            <p class="reveal">One conversation. No pitch, no pressure—just a chance to talk about where you are and where you want to go. If we can help, we'll tell you how. If we can't, we'll tell you that too.</p>
+            <a href="https://calendly.com/domje0624" class="btn reveal">Schedule a Conversation</a>
+            <p class="cta-email reveal">Or reach out directly: <a href="mailto:DEasterling@cssolutions.services">DEasterling@cssolutions.services</a></p>
+        </div>
+    </section>
+
+    <!-- ============================================
+         FOOTER
+         ============================================ -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 4C20 4 12 14 12 22C12 28 15.6 32 20 34C20 34 16 28 18 22C20 16 26 14 26 14C26 14 22 18 22 24C22 28 24 30 24 30C28 28 30 24 30 20C30 12 20 4 20 4Z" fill="url(#flame-gradient-footer)"/>
+                        <path d="M18 22C16 28 20 34 20 34C15.6 32 12 28 12 22C12 14 20 4 20 4C20 4 14 14 18 22Z" fill="#6B7280"/>
+                        <defs>
+                            <linearGradient id="flame-gradient-footer" x1="20" y1="4" x2="20" y2="34" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#3b82f6"/>
+                                <stop offset="1" stop-color="#1d4ed8"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="footer-logo-text">Catalyst Strategy Solutions</span>
+                </div>
+                <div class="footer-contact">
+                    <a href="mailto:DEasterling@cssolutions.services">DEasterling@cssolutions.services</a>
+                    <a href="tel:+17604214397">(760) 421-4397</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                © 2025 Catalyst Strategy Solutions. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- ============================================
+         JAVASCRIPT
+         ============================================ -->
+    <script>
+        // Mobile navigation toggle
+        function toggleNav() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+
+        // Close mobile nav when clicking a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.querySelector('.nav-links').classList.remove('active');
+            });
+        });
+
+        // Scroll reveal animation
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // ============================================
+        // UNIFIED CAROUSEL FUNCTIONALITY
+        // ============================================
+        
+        let isTouch = false;
+        let hasPlayedHints = { services: false, results: false, tiers: false };
+
+        // Detect touch device
+        window.addEventListener('touchstart', function() {
+            isTouch = true;
+        }, { once: true });
+
+        // Generic carousel setup
+        function setupCarousel(config) {
+            const grid = document.getElementById(config.gridId);
+            const cards = grid.querySelectorAll(config.cardSelector);
+            const navItems = document.querySelectorAll(config.navSelector);
+            
+            let currentIndex = config.startIndex || 0;
+
+            function updateCarousel() {
+                if (window.innerWidth > 900) {
+                    cards.forEach(card => card.classList.add('in-view'));
+                    return;
+                }
+                
+                const scrollLeft = grid.scrollLeft;
+                const containerWidth = grid.offsetWidth;
+                const scrollCenter = scrollLeft + (containerWidth / 2);
+                
+                cards.forEach((card, index) => {
+                    const cardLeft = card.offsetLeft;
+                    const cardCenter = cardLeft + (card.offsetWidth / 2);
+                    const distance = Math.abs(scrollCenter - cardCenter);
+                    
+                    if (distance < card.offsetWidth * 0.6) {
+                        card.classList.add('in-view');
+                        currentIndex = index;
+                    } else {
+                        card.classList.remove('in-view');
+                    }
+                });
+                
+                navItems.forEach((item, index) => {
+                    item.classList.toggle('active', index === currentIndex);
+                });
+            }
+
+            function scrollToCard(index) {
+                if (window.innerWidth > 900) return;
+                
+                const card = cards[index];
+                const containerWidth = grid.offsetWidth;
+                const scrollPosition = card.offsetLeft - (containerWidth / 2) + (card.offsetWidth / 2);
+                
+                grid.scrollTo({
+                    left: scrollPosition,
+                    behavior: 'smooth'
+                });
+            }
+
+            function playHint() {
+                if (hasPlayedHints[config.name] || window.innerWidth > 900) return;
+                hasPlayedHints[config.name] = true;
+                
+                grid.classList.add('hint-active');
+                setTimeout(() => {
+                    grid.classList.remove('hint-active');
+                }, 1200);
+            }
+
+            // Event listeners
+            grid.addEventListener('scroll', updateCarousel);
+            
+            navItems.forEach((item, index) => {
+                item.addEventListener('click', () => scrollToCard(index));
+            });
+
+            return { updateCarousel, scrollToCard, playHint };
+        }
+
+        // Setup all carousels
+        const servicesCarousel = setupCarousel({
+            name: 'services',
+            gridId: 'servicesGrid',
+            cardSelector: '.service-card',
+            navSelector: '.services-nav-item',
+            startIndex: 0
+        });
+
+        const resultsCarousel = setupCarousel({
+            name: 'results',
+            gridId: 'resultsGrid',
+            cardSelector: '.result-card',
+            navSelector: '.results-nav-item',
+            startIndex: 0
+        });
+
+        const tiersCarousel = setupCarousel({
+            name: 'tiers',
+            gridId: 'tiersGrid',
+            cardSelector: '.tier-card',
+            navSelector: '.tier-nav-item',
+            startIndex: 1
+        });
+
+        // Desktop hover zones for tiers
+        const hoverLeft = document.getElementById('tierHoverLeft');
+        const hoverRight = document.getElementById('tierHoverRight');
+        const tiersGrid = document.getElementById('tiersGrid');
+        let scrollInterval = null;
+
+        function startScrollLeft() {
+            if (isTouch || window.innerWidth <= 900) return;
+            scrollInterval = setInterval(() => {
+                tiersGrid.scrollBy({ left: -5, behavior: 'auto' });
+            }, 16);
+        }
+
+        function startScrollRight() {
+            if (isTouch || window.innerWidth <= 900) return;
+            scrollInterval = setInterval(() => {
+                tiersGrid.scrollBy({ left: 5, behavior: 'auto' });
+            }, 16);
+        }
+
+        function stopScroll() {
+            if (scrollInterval) {
+                clearInterval(scrollInterval);
+                scrollInterval = null;
+            }
+        }
+
+        hoverLeft.addEventListener('mouseenter', startScrollLeft);
+        hoverLeft.addEventListener('mouseleave', stopScroll);
+        hoverRight.addEventListener('mouseenter', startScrollRight);
+        hoverRight.addEventListener('mouseleave', stopScroll);
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (window.innerWidth <= 900) {
+                    // Start services on first card
+                    servicesCarousel.scrollToCard(0);
+                    // Start results on first card
+                    resultsCarousel.scrollToCard(0);
+                    // Start tiers on Growth (middle)
+                    tiersCarousel.scrollToCard(1);
+                    
+                    // Play hint animations staggered
+                    setTimeout(() => servicesCarousel.playHint(), 500);
+                }
+                servicesCarousel.updateCarousel();
+                resultsCarousel.updateCarousel();
+                tiersCarousel.updateCarousel();
+            }, 100);
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            stopScroll();
+            servicesCarousel.updateCarousel();
+            resultsCarousel.updateCarousel();
+            tiersCarousel.updateCarousel();
+        });
+    </script>
+</body>
+</html>
