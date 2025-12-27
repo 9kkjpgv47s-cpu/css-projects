@@ -2,6 +2,8 @@
 
 A collection of CSS projects and experiments.
 
+Live site: https://cssolution.services
+
 ## Projects
 
 - **index.html** - Catalyst Strategy Solutions business consulting website with dark theme, responsive carousels, and scroll animations
