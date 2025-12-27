@@ -1,6 +1,5 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "css-projects",
-  "compatibility_date": "2025-12-27",
-  "pages_build_output_dir": "./"
+  "pages_build_output_dir": "./",
+  "compatibility_date": "2025-12-27"
 }
