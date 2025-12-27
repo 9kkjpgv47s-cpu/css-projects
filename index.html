@@ -1223,50 +1223,38 @@
         }
 
         .cursor-glass {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            width: 24px;
+            height: 32px;
             position: fixed;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow:
-                0 4px 20px rgba(59, 130, 246, 0.4),
-                0 0 30px rgba(59, 130, 246, 0.2);
             z-index: 10000;
-            transition: transform 0.2s ease, width 0.3s ease, height 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+            pointer-events: none;
+            /* Arrow shape using clip-path */
+            clip-path: polygon(0% 0%, 100% 50%, 35% 50%, 35% 100%, 0% 70%);
+            /* Glass effect */
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px) saturate(1.5);
+            -webkit-backdrop-filter: blur(10px) saturate(1.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            transition: transform 0.15s ease, background 0.2s ease;
         }
 
         .cursor-dot {
-            width: 6px;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            position: fixed;
-            transform: translate(-50%, -50%);
-            z-index: 10001;
-            transition: transform 0.1s ease, opacity 0.2s ease;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            display: none;
         }
 
         .cursor-hover .cursor-glass {
-            width: 55px;
-            height: 55px;
-            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.15);
+            background: rgba(59, 130, 246, 0.25);
             box-shadow:
-                0 6px 30px rgba(59, 130, 246, 0.6),
-                0 0 40px rgba(59, 130, 246, 0.3);
-        }
-
-        .cursor-hover .cursor-dot {
-            transform: translate(-50%, -50%) scale(1.5);
-            background: var(--accent-blue);
-            box-shadow: 0 0 15px var(--accent-blue);
+                0 6px 24px rgba(59, 130, 246, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
         }
 
         .cursor-click .cursor-glass {
-            transform: translate(-50%, -50%) scale(0.85);
+            transform: scale(0.9);
         }
 
         .cursor-click .cursor-dot {
@@ -1894,24 +1882,24 @@
                 reset() {
                     this.x = Math.random() * window.innerWidth;
                     this.y = Math.random() * window.innerHeight;
-                    this.size = Math.random() * 50 + 25;
+                    this.size = Math.random() * 60 + 40;
                     this.rotation = Math.random() * Math.PI * 2;
-                    this.rotationSpeed = (Math.random() - 0.5) * 0.005;
-                    this.driftX = (Math.random() - 0.5) * 0.4;
-                    this.driftY = (Math.random() - 0.5) * 0.3;
-                    this.baseOpacity = Math.random() * 0.15 + 0.08; // More visible: 0.08-0.23
+                    this.rotationSpeed = (Math.random() - 0.5) * 0.008;
+                    this.driftX = (Math.random() - 0.5) * 0.5;
+                    this.driftY = (Math.random() - 0.5) * 0.4;
+                    this.baseOpacity = Math.random() * 0.25 + 0.15; // Very visible: 0.15-0.40
                     this.opacity = this.baseOpacity;
                     this.type = Math.random() > 0.5 ? 'hexagon' : 'triangle';
                     this.pulsePhase = Math.random() * Math.PI * 2;
                     this.pulseSpeed = Math.random() * 0.02 + 0.01;
                     // Random color variation
                     const colorChoice = Math.random();
-                    if (colorChoice < 0.6) {
-                        this.color = '#3b82f6'; // Primary blue
-                    } else if (colorChoice < 0.8) {
-                        this.color = '#818cf8'; // Purple
+                    if (colorChoice < 0.5) {
+                        this.color = '#60a5fa'; // Brighter blue
+                    } else if (colorChoice < 0.75) {
+                        this.color = '#a78bfa'; // Brighter purple
                     } else {
-                        this.color = '#06b6d4'; // Cyan
+                        this.color = '#22d3ee'; // Brighter cyan
                     }
                 }
 
@@ -1936,13 +1924,10 @@
                 }
 
                 draw(ctx) {
-                    if (this.opacity < 0.01) return; // Don't draw if invisible
+                    if (this.opacity < 0.01) return;
 
-                    const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
+                    const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
                     ctx.save();
-                    ctx.globalAlpha = this.opacity * pulse;
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = 1.5;
                     ctx.translate(this.x, this.y);
                     ctx.rotate(this.rotation);
 
@@ -1956,12 +1941,17 @@
                         else ctx.lineTo(px, py);
                     }
                     ctx.closePath();
-                    ctx.stroke();
 
-                    // Add subtle fill for more visibility
-                    ctx.globalAlpha = this.opacity * pulse * 0.1;
+                    // Fill with visible opacity
+                    ctx.globalAlpha = this.opacity * pulse * 0.25;
                     ctx.fillStyle = this.color;
                     ctx.fill();
+
+                    // Stroke with thicker line
+                    ctx.globalAlpha = this.opacity * pulse;
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
 
                     ctx.restore();
                 }
