@@ -1204,71 +1204,81 @@
         }
 
         /* ============================================
-           CUSTOM CURSOR SYSTEM
+           ELEGANT GLASS LENS CURSOR
            ============================================ */
         @media (hover: hover) and (pointer: fine) {
-            body { cursor: none; }
-            a, button, .service-card, .tier-card, .result-card, .nav-toggle, .nav-links a { cursor: none; }
+            * { cursor: none !important; }
         }
 
-        .custom-cursor {
+        #glass-lens {
             position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             pointer-events: none;
-            z-index: 9999;
+            z-index: 99999;
+            /* Completely transparent - only interacts with background */
+            background: transparent;
+            /* Glass distortion effect */
+            backdrop-filter: blur(1px) brightness(1.1) contrast(1.05);
+            -webkit-backdrop-filter: blur(1px) brightness(1.1) contrast(1.05);
+            /* Elegant subtle border */
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            /* Soft inner glow */
+            box-shadow:
+                inset 0 0 20px rgba(255, 255, 255, 0.08),
+                0 0 20px rgba(255, 255, 255, 0.05);
+            /* Smooth movement */
+            transition: transform 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        width 0.2s ease,
+                        height 0.2s ease,
+                        border-color 0.2s ease,
+                        backdrop-filter 0.2s ease;
+            transform: translate(-50%, -50%);
             display: none;
         }
 
         @media (hover: hover) and (pointer: fine) {
-            .custom-cursor { display: block; }
+            #glass-lens { display: block; }
         }
 
-        .cursor-glass {
-            width: 24px;
-            height: 32px;
-            position: fixed;
-            z-index: 10000;
-            pointer-events: none;
-            /* Arrow shape using clip-path */
-            clip-path: polygon(0% 0%, 100% 50%, 35% 50%, 35% 100%, 0% 70%);
-            /* Glass effect */
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px) saturate(1.5);
-            -webkit-backdrop-filter: blur(10px) saturate(1.5);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        #glass-lens.hovering {
+            width: 70px;
+            height: 70px;
+            border-color: rgba(96, 165, 250, 0.4);
+            backdrop-filter: blur(2px) brightness(1.15) saturate(1.2);
+            -webkit-backdrop-filter: blur(2px) brightness(1.15) saturate(1.2);
             box-shadow:
-                0 4px 16px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            transition: transform 0.15s ease, background 0.2s ease;
+                inset 0 0 30px rgba(96, 165, 250, 0.1),
+                0 0 30px rgba(96, 165, 250, 0.1);
         }
 
-        .cursor-dot {
-            display: none;
+        #glass-lens.clicking {
+            transform: translate(-50%, -50%) scale(0.85);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
-        .cursor-hover .cursor-glass {
-            transform: scale(1.15);
-            background: rgba(59, 130, 246, 0.25);
-            box-shadow:
-                0 6px 24px rgba(59, 130, 246, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5);
-        }
-
-        .cursor-click .cursor-glass {
-            transform: scale(0.9);
-        }
-
-        .cursor-click .cursor-dot {
-            transform: translate(-50%, -50%) scale(0.5);
-        }
-
-        .trail-particle {
-            position: fixed;
+        /* Small center dot for precision */
+        #glass-lens::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
             width: 4px;
             height: 4px;
             background: rgba(255, 255, 255, 0.6);
             border-radius: 50%;
-            pointer-events: none;
-            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        #glass-lens.hovering::after {
+            transform: translate(-50%, -50%) scale(1.5);
+            background: rgba(96, 165, 250, 0.8);
+        }
+
+        #glass-lens.clicking::after {
+            transform: translate(-50%, -50%) scale(0.5);
         }
 
         /* ============================================
@@ -1364,11 +1374,8 @@
     <!-- Geometric Background Canvas -->
     <canvas id="geometricBg"></canvas>
 
-    <!-- Custom Cursor -->
-    <div class="custom-cursor">
-        <div class="cursor-dot"></div>
-        <div class="cursor-glass"></div>
-    </div>
+    <!-- Elegant Glass Lens Cursor -->
+    <div id="glass-lens"></div>
 
     <!-- ============================================
          NAVIGATION
@@ -1998,64 +2005,42 @@
         })();
 
         // ============================================
-        // 2. CUSTOM CURSOR SYSTEM (Desktop Only)
+        // 2. ELEGANT GLASS LENS CURSOR (Desktop Only)
         // ============================================
         if (hasHover) {
-            (function initCustomCursor() {
-                const cursor = document.querySelector('.custom-cursor');
-                const dot = document.querySelector('.cursor-dot');
-                const glass = document.querySelector('.cursor-glass');
+            (function initGlassLens() {
+                const lens = document.getElementById('glass-lens');
+                if (!lens) return;
 
                 let mouseX = 0, mouseY = 0;
-                let glassX = 0, glassY = 0;
-                let trailThrottle = 0;
+                let lensX = 0, lensY = 0;
 
+                // Track mouse position
                 document.addEventListener('mousemove', (e) => {
                     mouseX = e.clientX;
                     mouseY = e.clientY;
-                    dot.style.left = mouseX + 'px';
-                    dot.style.top = mouseY + 'px';
-
-                    // Create subtle trail (throttled)
-                    if (Date.now() - trailThrottle > 80) {
-                        trailThrottle = Date.now();
-                        createTrailParticle(mouseX, mouseY);
-                    }
                 });
 
-                function createTrailParticle(x, y) {
-                    const particle = document.createElement('div');
-                    particle.className = 'trail-particle';
-                    particle.style.left = x + 'px';
-                    particle.style.top = y + 'px';
-                    document.body.appendChild(particle);
-
-                    particle.animate([
-                        { opacity: 0.3, transform: 'translate(-50%, -50%) scale(1)' },
-                        { opacity: 0, transform: 'translate(-50%, -50%) scale(0)' }
-                    ], { duration: 300, fill: 'forwards' }).onfinish = () => particle.remove();
+                // Smooth lens follow with lerp
+                function animateLens() {
+                    lensX += (mouseX - lensX) * 0.18;
+                    lensY += (mouseY - lensY) * 0.18;
+                    lens.style.left = lensX + 'px';
+                    lens.style.top = lensY + 'px';
+                    requestAnimationFrame(animateLens);
                 }
-
-                // Smooth glass follow with lerp
-                function animateGlass() {
-                    glassX += (mouseX - glassX) * 0.15;
-                    glassY += (mouseY - glassY) * 0.15;
-                    glass.style.left = glassX + 'px';
-                    glass.style.top = glassY + 'px';
-                    requestAnimationFrame(animateGlass);
-                }
-                animateGlass();
+                animateLens();
 
                 // Hover detection for interactive elements
-                const interactiveElements = document.querySelectorAll('a, button, .service-card, .tier-card, .result-card, .nav-toggle');
+                const interactiveElements = document.querySelectorAll('a, button, .service-card, .tier-card, .result-card, .nav-toggle, input, textarea');
                 interactiveElements.forEach(el => {
-                    el.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
-                    el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
+                    el.addEventListener('mouseenter', () => lens.classList.add('hovering'));
+                    el.addEventListener('mouseleave', () => lens.classList.remove('hovering'));
                 });
 
                 // Click effect
-                document.addEventListener('mousedown', () => cursor.classList.add('cursor-click'));
-                document.addEventListener('mouseup', () => cursor.classList.remove('cursor-click'));
+                document.addEventListener('mousedown', () => lens.classList.add('clicking'));
+                document.addEventListener('mouseup', () => lens.classList.remove('clicking'));
             })();
         }
 
