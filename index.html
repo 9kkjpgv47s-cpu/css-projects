@@ -1215,55 +1215,72 @@
             .custom-cursor { display: block; }
         }
 
-        .cursor-dot {
-            width: 8px;
-            height: 8px;
-            background: #fff;
+        .cursor-glass {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             position: fixed;
             transform: translate(-50%, -50%);
-            transition: transform 0.15s ease, width 0.2s ease, height 0.2s ease, background 0.2s ease;
-            z-index: 10001;
-            mix-blend-mode: difference;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px) saturate(1.2);
+            -webkit-backdrop-filter: blur(8px) saturate(1.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 4px 30px rgba(0, 0, 0, 0.1),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            z-index: 10000;
+            transition: transform 0.2s ease, width 0.3s ease, height 0.3s ease, background 0.3s ease, border-color 0.3s ease;
         }
 
-        .cursor-ring {
-            width: 40px;
-            height: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
+        .cursor-glass::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 50%;
             position: fixed;
             transform: translate(-50%, -50%);
-            transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease;
-            z-index: 10000;
-            mix-blend-mode: difference;
+            z-index: 10001;
+            transition: transform 0.1s ease, opacity 0.2s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .cursor-hover .cursor-glass {
+            width: 70px;
+            height: 70px;
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.4);
         }
 
         .cursor-hover .cursor-dot {
             transform: translate(-50%, -50%) scale(1.5);
             background: var(--accent-blue);
+            box-shadow: 0 0 15px var(--accent-blue);
         }
 
-        .cursor-hover .cursor-ring {
-            width: 60px;
-            height: 60px;
-            border-color: var(--accent-blue);
+        .cursor-click .cursor-glass {
+            transform: translate(-50%, -50%) scale(0.85);
         }
 
         .cursor-click .cursor-dot {
-            transform: translate(-50%, -50%) scale(0.8);
-        }
-
-        .cursor-click .cursor-ring {
-            width: 35px;
-            height: 35px;
+            transform: translate(-50%, -50%) scale(0.5);
         }
 
         .trail-particle {
             position: fixed;
-            width: 5px;
-            height: 5px;
-            background: var(--accent-blue);
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
             border-radius: 50%;
             pointer-events: none;
             z-index: 9998;
@@ -1297,11 +1314,28 @@
            ============================================ */
         .click-particle {
             position: fixed;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
             pointer-events: none;
             z-index: 9997;
+        }
+
+        .click-particle.circle {
+            border-radius: 50%;
+        }
+
+        .click-particle.square {
+            border-radius: 2px;
+        }
+
+        .click-particle.star {
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        .click-particle.diamond {
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .click-particle.glow {
+            box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
         }
 
         /* ============================================
@@ -1348,7 +1382,7 @@
     <!-- Custom Cursor -->
     <div class="custom-cursor">
         <div class="cursor-dot"></div>
-        <div class="cursor-ring"></div>
+        <div class="cursor-glass"></div>
     </div>
 
     <!-- ============================================
@@ -1818,6 +1852,34 @@
             const fps = 30;
             const frameInterval = 1000 / fps;
 
+            // Text protection zones (areas to avoid)
+            let protectedZones = [];
+
+            function updateProtectedZones() {
+                protectedZones = [];
+                const textElements = document.querySelectorAll('h1, h2, h3, p, .btn, .logo, .nav-links, .result-number, .result-label, .tier-name, .tier-tagline');
+                textElements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    protectedZones.push({
+                        x: rect.left - 20,
+                        y: rect.top + window.scrollY - 20,
+                        width: rect.width + 40,
+                        height: rect.height + 40
+                    });
+                });
+            }
+
+            function isInProtectedZone(x, y, size) {
+                const scrollY = window.scrollY;
+                for (const zone of protectedZones) {
+                    if (x + size > zone.x && x - size < zone.x + zone.width &&
+                        y + size > zone.y - scrollY && y - size < zone.y - scrollY + zone.height) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             function resize() {
                 const dpr = window.devicePixelRatio || 1;
                 canvas.width = window.innerWidth * dpr;
@@ -1835,15 +1897,25 @@
                 reset() {
                     this.x = Math.random() * window.innerWidth;
                     this.y = Math.random() * window.innerHeight;
-                    this.size = Math.random() * 40 + 20;
+                    this.size = Math.random() * 50 + 25;
                     this.rotation = Math.random() * Math.PI * 2;
-                    this.rotationSpeed = (Math.random() - 0.5) * 0.003;
-                    this.driftX = (Math.random() - 0.5) * 0.3;
-                    this.driftY = (Math.random() - 0.5) * 0.2;
-                    this.opacity = Math.random() * 0.06 + 0.02;
+                    this.rotationSpeed = (Math.random() - 0.5) * 0.005;
+                    this.driftX = (Math.random() - 0.5) * 0.4;
+                    this.driftY = (Math.random() - 0.5) * 0.3;
+                    this.baseOpacity = Math.random() * 0.15 + 0.08; // More visible: 0.08-0.23
+                    this.opacity = this.baseOpacity;
                     this.type = Math.random() > 0.5 ? 'hexagon' : 'triangle';
                     this.pulsePhase = Math.random() * Math.PI * 2;
                     this.pulseSpeed = Math.random() * 0.02 + 0.01;
+                    // Random color variation
+                    const colorChoice = Math.random();
+                    if (colorChoice < 0.6) {
+                        this.color = '#3b82f6'; // Primary blue
+                    } else if (colorChoice < 0.8) {
+                        this.color = '#818cf8'; // Purple
+                    } else {
+                        this.color = '#06b6d4'; // Cyan
+                    }
                 }
 
                 update() {
@@ -1851,6 +1923,13 @@
                     this.y += this.driftY;
                     this.rotation += this.rotationSpeed;
                     this.pulsePhase += this.pulseSpeed;
+
+                    // Fade out if in protected zone
+                    if (isInProtectedZone(this.x, this.y, this.size)) {
+                        this.opacity = Math.max(0, this.opacity - 0.02);
+                    } else {
+                        this.opacity = Math.min(this.baseOpacity, this.opacity + 0.01);
+                    }
 
                     // Wrap around screen
                     if (this.x < -this.size) this.x = window.innerWidth + this.size;
@@ -1860,11 +1939,13 @@
                 }
 
                 draw(ctx) {
+                    if (this.opacity < 0.01) return; // Don't draw if invisible
+
                     const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
                     ctx.save();
                     ctx.globalAlpha = this.opacity * pulse;
-                    ctx.strokeStyle = '#3b82f6';
-                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 1.5;
                     ctx.translate(this.x, this.y);
                     ctx.rotate(this.rotation);
 
@@ -1879,14 +1960,21 @@
                     }
                     ctx.closePath();
                     ctx.stroke();
+
+                    // Add subtle fill for more visibility
+                    ctx.globalAlpha = this.opacity * pulse * 0.1;
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+
                     ctx.restore();
                 }
             }
 
             function init() {
                 resize();
+                updateProtectedZones();
                 shapes = [];
-                const count = isMobileDevice ? 10 : 20;
+                const count = isMobileDevice ? 12 : 25;
                 for (let i = 0; i < count; i++) {
                     shapes.push(new GeometricShape());
                 }
@@ -1910,8 +1998,15 @@
             init();
             animate(0);
 
+            // Update protected zones periodically and on scroll
+            setInterval(updateProtectedZones, 1000);
+            window.addEventListener('scroll', () => {
+                requestAnimationFrame(updateProtectedZones);
+            });
+
             window.addEventListener('resize', () => {
                 resize();
+                updateProtectedZones();
             });
         })();
 
@@ -1922,10 +2017,10 @@
             (function initCustomCursor() {
                 const cursor = document.querySelector('.custom-cursor');
                 const dot = document.querySelector('.cursor-dot');
-                const ring = document.querySelector('.cursor-ring');
+                const glass = document.querySelector('.cursor-glass');
 
                 let mouseX = 0, mouseY = 0;
-                let ringX = 0, ringY = 0;
+                let glassX = 0, glassY = 0;
                 let trailThrottle = 0;
 
                 document.addEventListener('mousemove', (e) => {
@@ -1934,8 +2029,8 @@
                     dot.style.left = mouseX + 'px';
                     dot.style.top = mouseY + 'px';
 
-                    // Create trail particles (throttled)
-                    if (Date.now() - trailThrottle > 50) {
+                    // Create subtle trail (throttled)
+                    if (Date.now() - trailThrottle > 80) {
                         trailThrottle = Date.now();
                         createTrailParticle(mouseX, mouseY);
                     }
@@ -1949,20 +2044,20 @@
                     document.body.appendChild(particle);
 
                     particle.animate([
-                        { opacity: 0.4, transform: 'translate(-50%, -50%) scale(1)' },
-                        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.2)' }
-                    ], { duration: 400, fill: 'forwards' }).onfinish = () => particle.remove();
+                        { opacity: 0.3, transform: 'translate(-50%, -50%) scale(1)' },
+                        { opacity: 0, transform: 'translate(-50%, -50%) scale(0)' }
+                    ], { duration: 300, fill: 'forwards' }).onfinish = () => particle.remove();
                 }
 
-                // Smooth ring follow with lerp
-                function animateRing() {
-                    ringX += (mouseX - ringX) * 0.12;
-                    ringY += (mouseY - ringY) * 0.12;
-                    ring.style.left = ringX + 'px';
-                    ring.style.top = ringY + 'px';
-                    requestAnimationFrame(animateRing);
+                // Smooth glass follow with lerp
+                function animateGlass() {
+                    glassX += (mouseX - glassX) * 0.15;
+                    glassY += (mouseY - glassY) * 0.15;
+                    glass.style.left = glassX + 'px';
+                    glass.style.top = glassY + 'px';
+                    requestAnimationFrame(animateGlass);
                 }
-                animateRing();
+                animateGlass();
 
                 // Hover detection for interactive elements
                 const interactiveElements = document.querySelectorAll('a, button, .service-card, .tier-card, .result-card, .nav-toggle');
@@ -2019,33 +2114,92 @@
         // 4. PARTICLE BURST ON CLICK/TAP
         // ============================================
         (function initParticleBurst() {
-            const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#ffffff', '#818cf8'];
+            const colors = [
+                '#3b82f6', '#60a5fa', '#93c5fd', '#ffffff',
+                '#818cf8', '#a78bfa', '#c4b5fd', '#e0e7ff',
+                '#06b6d4', '#22d3ee', '#67e8f9'
+            ];
+            const shapes = ['circle', 'square', 'star', 'diamond'];
 
             function createBurst(x, y) {
-                const particleCount = 12;
+                // Random particle count between 15-25
+                const particleCount = 15 + Math.floor(Math.random() * 11);
+
+                // Random burst pattern
+                const burstType = Math.random();
 
                 for (let i = 0; i < particleCount; i++) {
                     const particle = document.createElement('div');
-                    particle.className = 'click-particle';
+                    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                    const size = 4 + Math.random() * 12; // 4-16px
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    const hasGlow = Math.random() > 0.6;
+
+                    particle.className = `click-particle ${shape}${hasGlow ? ' glow' : ''}`;
                     particle.style.left = x + 'px';
                     particle.style.top = y + 'px';
-                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.width = size + 'px';
+                    particle.style.height = size + 'px';
+                    particle.style.background = color;
+                    particle.style.color = color;
                     document.body.appendChild(particle);
 
-                    const angle = (Math.PI * 2 / particleCount) * i + (Math.random() - 0.5) * 0.5;
-                    const velocity = 60 + Math.random() * 80;
+                    // Randomize angle more dramatically
+                    let angle, velocity;
+                    if (burstType < 0.33) {
+                        // Spiral burst
+                        angle = (Math.PI * 2 / particleCount) * i + (i * 0.2);
+                        velocity = 50 + i * 8 + Math.random() * 40;
+                    } else if (burstType < 0.66) {
+                        // Chaotic burst
+                        angle = Math.random() * Math.PI * 2;
+                        velocity = 30 + Math.random() * 150;
+                    } else {
+                        // Firework burst
+                        angle = (Math.PI * 2 / particleCount) * i;
+                        velocity = 80 + Math.random() * 100;
+                    }
+
                     const endX = Math.cos(angle) * velocity;
-                    const endY = Math.sin(angle) * velocity;
+                    const endY = Math.sin(angle) * velocity - (Math.random() * 30); // Slight upward bias
+                    const rotation = Math.random() * 720 - 360; // Random rotation
+                    const duration = 400 + Math.random() * 600;
 
                     particle.animate([
-                        { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-                        { transform: `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(0)`, opacity: 0 }
+                        {
+                            transform: 'translate(-50%, -50%) scale(1) rotate(0deg)',
+                            opacity: 1
+                        },
+                        {
+                            transform: `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(${Math.random() * 0.5}) rotate(${rotation}deg)`,
+                            opacity: 0
+                        }
                     ], {
-                        duration: 600 + Math.random() * 200,
-                        easing: 'cubic-bezier(0, 0.5, 0.5, 1)',
+                        duration: duration,
+                        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                         fill: 'forwards'
                     }).onfinish = () => particle.remove();
                 }
+
+                // Add a central flash
+                const flash = document.createElement('div');
+                flash.style.cssText = `
+                    position: fixed;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: 30px;
+                    height: 30px;
+                    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 9997;
+                    transform: translate(-50%, -50%);
+                `;
+                document.body.appendChild(flash);
+                flash.animate([
+                    { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
+                    { opacity: 0, transform: 'translate(-50%, -50%) scale(3)' }
+                ], { duration: 300, fill: 'forwards' }).onfinish = () => flash.remove();
             }
 
             // Desktop click
