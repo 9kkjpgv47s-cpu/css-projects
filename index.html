@@ -238,6 +238,12 @@
             z-index: 1;
         }
 
+        /* Content above geometric canvas */
+        nav, section, footer {
+            position: relative;
+            z-index: 2;
+        }
+
         /* ============================================
            TYPOGRAPHY
            ============================================ */
@@ -1191,9 +1197,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -3;
+            z-index: 1;
             pointer-events: none;
-            opacity: 0.7;
+            opacity: 1;
         }
 
         /* ============================================
@@ -1216,31 +1222,18 @@
         }
 
         .cursor-glass {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             position: fixed;
             transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(8px) saturate(1.2);
-            -webkit-backdrop-filter: blur(8px) saturate(1.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             box-shadow:
-                0 4px 30px rgba(0, 0, 0, 0.1),
-                inset 0 0 20px rgba(255, 255, 255, 0.05);
+                0 4px 20px rgba(59, 130, 246, 0.4),
+                0 0 30px rgba(59, 130, 246, 0.2);
             z-index: 10000;
             transition: transform 0.2s ease, width 0.3s ease, height 0.3s ease, background 0.3s ease, border-color 0.3s ease;
-        }
-
-        .cursor-glass::before {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            right: 2px;
-            bottom: 2px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .cursor-dot {
@@ -1256,10 +1249,13 @@
         }
 
         .cursor-hover .cursor-glass {
-            width: 70px;
-            height: 70px;
-            background: rgba(59, 130, 246, 0.12);
-            border-color: rgba(59, 130, 246, 0.4);
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow:
+                0 6px 30px rgba(59, 130, 246, 0.6),
+                0 0 40px rgba(59, 130, 246, 0.3);
         }
 
         .cursor-hover .cursor-dot {
