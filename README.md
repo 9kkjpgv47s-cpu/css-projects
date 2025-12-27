@@ -4,7 +4,7 @@ A collection of CSS projects and experiments.
 
 ## Projects
 
-*Projects will be listed here as they are added.*
+- **cssolutions-website.html** - Catalyst Strategy Solutions business consulting website with dark theme, responsive carousels, and scroll animations
 
 ## Getting Started
 
