@@ -1181,9 +1181,176 @@
             .footer-content { flex-direction: column; text-align: center; }
             .footer-contact { flex-direction: column; gap: 0.5rem; }
         }
+
+        /* ============================================
+           GEOMETRIC BACKGROUND CANVAS
+           ============================================ */
+        #geometricBg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* ============================================
+           CUSTOM CURSOR SYSTEM
+           ============================================ */
+        @media (hover: hover) and (pointer: fine) {
+            body { cursor: none; }
+            a, button, .service-card, .tier-card, .result-card, .nav-toggle, .nav-links a { cursor: none; }
+        }
+
+        .custom-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .custom-cursor { display: block; }
+        }
+
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            position: fixed;
+            transform: translate(-50%, -50%);
+            transition: transform 0.15s ease, width 0.2s ease, height 0.2s ease, background 0.2s ease;
+            z-index: 10001;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-ring {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: fixed;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease;
+            z-index: 10000;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-hover .cursor-dot {
+            transform: translate(-50%, -50%) scale(1.5);
+            background: var(--accent-blue);
+        }
+
+        .cursor-hover .cursor-ring {
+            width: 60px;
+            height: 60px;
+            border-color: var(--accent-blue);
+        }
+
+        .cursor-click .cursor-dot {
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+
+        .cursor-click .cursor-ring {
+            width: 35px;
+            height: 35px;
+        }
+
+        .trail-particle {
+            position: fixed;
+            width: 5px;
+            height: 5px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        /* ============================================
+           3D CARD TILT EFFECT
+           ============================================ */
+        .service-card,
+        .tier-card,
+        .result-card {
+            transform-style: preserve-3d;
+        }
+
+        .card-shine {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: inherit;
+            z-index: 2;
+        }
+
+        /* ============================================
+           PARTICLE BURST
+           ============================================ */
+        .click-particle {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9997;
+        }
+
+        /* ============================================
+           TEXT REVEAL ANIMATION
+           ============================================ */
+        .text-reveal {
+            overflow: hidden;
+        }
+
+        .text-reveal .char {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(100%);
+            animation: charReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .text-reveal .char.space {
+            width: 0.3em;
+        }
+
+        @keyframes charReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================
+           NUMBER COUNTER
+           ============================================ */
+        .result-number {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .result-number.counting {
+            transition: none;
+        }
     </style>
 </head>
 <body>
+    <!-- Geometric Background Canvas -->
+    <canvas id="geometricBg"></canvas>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor">
+        <div class="cursor-dot"></div>
+        <div class="cursor-ring"></div>
+    </div>
+
     <!-- ============================================
          NAVIGATION
          ============================================ -->
@@ -1207,7 +1374,7 @@
          HERO SECTION (KEPT AS-IS)
          ============================================ -->
     <section class="hero">
-        <h1>You built something real. Now build the operation to match.</h1>
+        <h1 class="text-reveal">You built something real. Now build the operation to match.</h1>
         <p>Your skills, your vision, your years of showing up—that's what got you here. We're here to build around what you've created, so it can grow without everything running through you.</p>
         <a href="https://calendly.com/domje0624" class="btn">Schedule a Conversation</a>
         <div class="scroll-indicator">Scroll</div>
@@ -1290,22 +1457,22 @@
             
             <div class="results-grid" id="resultsGrid">
                 <div class="result-card reveal" data-result="0">
-                    <div class="result-number">100%</div>
+                    <div class="result-number" data-count="100" data-suffix="%">0%</div>
                     <div class="result-label">Retention on Teams I Lead</div>
                     <div class="result-desc">People stay when systems support them and investment flows both ways.</div>
                 </div>
                 <div class="result-card reveal" data-result="1">
-                    <div class="result-number">10-20%</div>
+                    <div class="result-number" data-count-range="10-20" data-suffix="%">0%</div>
                     <div class="result-label">Sales Growth</div>
                     <div class="result-desc">Typical results within the first six months. Clean operations let growth happen naturally.</div>
                 </div>
                 <div class="result-card reveal" data-result="2">
-                    <div class="result-number">10-30%</div>
+                    <div class="result-number" data-count-range="10-30" data-suffix="%">0%</div>
                     <div class="result-label">Profit Improvement</div>
                     <div class="result-desc">From removing friction and waste—not by cutting corners on people.</div>
                 </div>
                 <div class="result-card reveal" data-result="3">
-                    <div class="result-number">Lasting</div>
+                    <div class="result-number" data-text="Lasting">Lasting</div>
                     <div class="result-label">Momentum</div>
                     <div class="result-desc">Systems that keep working after we're gone. Your independence is always the goal.</div>
                 </div>
@@ -1629,6 +1796,366 @@
             resultsCarousel.updateCarousel();
             tiersCarousel.updateCarousel();
         });
+
+        // ============================================
+        // ADVANCED VISUAL EFFECTS
+        // ============================================
+
+        // Feature detection
+        const isMobileDevice = window.innerWidth < 768;
+        const hasHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+        // ============================================
+        // 1. GEOMETRIC BACKGROUND
+        // ============================================
+        (function initGeometricBackground() {
+            const canvas = document.getElementById('geometricBg');
+            const ctx = canvas.getContext('2d');
+
+            let shapes = [];
+            let animationId;
+            let lastTime = 0;
+            const fps = 30;
+            const frameInterval = 1000 / fps;
+
+            function resize() {
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = window.innerWidth * dpr;
+                canvas.height = window.innerHeight * dpr;
+                ctx.scale(dpr, dpr);
+                canvas.style.width = window.innerWidth + 'px';
+                canvas.style.height = window.innerHeight + 'px';
+            }
+
+            class GeometricShape {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = Math.random() * window.innerWidth;
+                    this.y = Math.random() * window.innerHeight;
+                    this.size = Math.random() * 40 + 20;
+                    this.rotation = Math.random() * Math.PI * 2;
+                    this.rotationSpeed = (Math.random() - 0.5) * 0.003;
+                    this.driftX = (Math.random() - 0.5) * 0.3;
+                    this.driftY = (Math.random() - 0.5) * 0.2;
+                    this.opacity = Math.random() * 0.06 + 0.02;
+                    this.type = Math.random() > 0.5 ? 'hexagon' : 'triangle';
+                    this.pulsePhase = Math.random() * Math.PI * 2;
+                    this.pulseSpeed = Math.random() * 0.02 + 0.01;
+                }
+
+                update() {
+                    this.x += this.driftX;
+                    this.y += this.driftY;
+                    this.rotation += this.rotationSpeed;
+                    this.pulsePhase += this.pulseSpeed;
+
+                    // Wrap around screen
+                    if (this.x < -this.size) this.x = window.innerWidth + this.size;
+                    if (this.x > window.innerWidth + this.size) this.x = -this.size;
+                    if (this.y < -this.size) this.y = window.innerHeight + this.size;
+                    if (this.y > window.innerHeight + this.size) this.y = -this.size;
+                }
+
+                draw(ctx) {
+                    const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
+                    ctx.save();
+                    ctx.globalAlpha = this.opacity * pulse;
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 1;
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+
+                    ctx.beginPath();
+                    const sides = this.type === 'hexagon' ? 6 : 3;
+                    for (let i = 0; i < sides; i++) {
+                        const angle = (Math.PI * 2 / sides) * i - Math.PI / 2;
+                        const px = this.size * Math.cos(angle);
+                        const py = this.size * Math.sin(angle);
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            function init() {
+                resize();
+                shapes = [];
+                const count = isMobileDevice ? 10 : 20;
+                for (let i = 0; i < count; i++) {
+                    shapes.push(new GeometricShape());
+                }
+            }
+
+            function animate(currentTime) {
+                animationId = requestAnimationFrame(animate);
+
+                const delta = currentTime - lastTime;
+                if (delta < frameInterval) return;
+                lastTime = currentTime - (delta % frameInterval);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                shapes.forEach(shape => {
+                    shape.update();
+                    shape.draw(ctx);
+                });
+            }
+
+            init();
+            animate(0);
+
+            window.addEventListener('resize', () => {
+                resize();
+            });
+        })();
+
+        // ============================================
+        // 2. CUSTOM CURSOR SYSTEM (Desktop Only)
+        // ============================================
+        if (hasHover) {
+            (function initCustomCursor() {
+                const cursor = document.querySelector('.custom-cursor');
+                const dot = document.querySelector('.cursor-dot');
+                const ring = document.querySelector('.cursor-ring');
+
+                let mouseX = 0, mouseY = 0;
+                let ringX = 0, ringY = 0;
+                let trailThrottle = 0;
+
+                document.addEventListener('mousemove', (e) => {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                    dot.style.left = mouseX + 'px';
+                    dot.style.top = mouseY + 'px';
+
+                    // Create trail particles (throttled)
+                    if (Date.now() - trailThrottle > 50) {
+                        trailThrottle = Date.now();
+                        createTrailParticle(mouseX, mouseY);
+                    }
+                });
+
+                function createTrailParticle(x, y) {
+                    const particle = document.createElement('div');
+                    particle.className = 'trail-particle';
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    document.body.appendChild(particle);
+
+                    particle.animate([
+                        { opacity: 0.4, transform: 'translate(-50%, -50%) scale(1)' },
+                        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.2)' }
+                    ], { duration: 400, fill: 'forwards' }).onfinish = () => particle.remove();
+                }
+
+                // Smooth ring follow with lerp
+                function animateRing() {
+                    ringX += (mouseX - ringX) * 0.12;
+                    ringY += (mouseY - ringY) * 0.12;
+                    ring.style.left = ringX + 'px';
+                    ring.style.top = ringY + 'px';
+                    requestAnimationFrame(animateRing);
+                }
+                animateRing();
+
+                // Hover detection for interactive elements
+                const interactiveElements = document.querySelectorAll('a, button, .service-card, .tier-card, .result-card, .nav-toggle');
+                interactiveElements.forEach(el => {
+                    el.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
+                    el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
+                });
+
+                // Click effect
+                document.addEventListener('mousedown', () => cursor.classList.add('cursor-click'));
+                document.addEventListener('mouseup', () => cursor.classList.remove('cursor-click'));
+            })();
+        }
+
+        // ============================================
+        // 3. 3D CARD TILT EFFECT (Desktop Only)
+        // ============================================
+        if (hasHover && !isTouch) {
+            (function init3DCards() {
+                const cards = document.querySelectorAll('.service-card, .tier-card, .result-card');
+
+                cards.forEach(card => {
+                    // Add shine overlay
+                    const shine = document.createElement('div');
+                    shine.className = 'card-shine';
+                    card.style.position = 'relative';
+                    card.appendChild(shine);
+
+                    card.addEventListener('mousemove', (e) => {
+                        const rect = card.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+
+                        const rotateX = ((e.clientY - centerY) / (rect.height / 2)) * -8;
+                        const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 8;
+
+                        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+
+                        const shineX = ((e.clientX - rect.left) / rect.width) * 100;
+                        const shineY = ((e.clientY - rect.top) / rect.height) * 100;
+                        shine.style.background = `radial-gradient(circle at ${shineX}% ${shineY}%, rgba(255,255,255,0.15) 0%, transparent 50%)`;
+                        shine.style.opacity = '1';
+                    });
+
+                    card.addEventListener('mouseleave', () => {
+                        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+                        card.querySelector('.card-shine').style.opacity = '0';
+                    });
+                });
+            })();
+        }
+
+        // ============================================
+        // 4. PARTICLE BURST ON CLICK/TAP
+        // ============================================
+        (function initParticleBurst() {
+            const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#ffffff', '#818cf8'];
+
+            function createBurst(x, y) {
+                const particleCount = 12;
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'click-particle';
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    document.body.appendChild(particle);
+
+                    const angle = (Math.PI * 2 / particleCount) * i + (Math.random() - 0.5) * 0.5;
+                    const velocity = 60 + Math.random() * 80;
+                    const endX = Math.cos(angle) * velocity;
+                    const endY = Math.sin(angle) * velocity;
+
+                    particle.animate([
+                        { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                        { transform: `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(0)`, opacity: 0 }
+                    ], {
+                        duration: 600 + Math.random() * 200,
+                        easing: 'cubic-bezier(0, 0.5, 0.5, 1)',
+                        fill: 'forwards'
+                    }).onfinish = () => particle.remove();
+                }
+            }
+
+            // Desktop click
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('a, button, input')) {
+                    createBurst(e.clientX, e.clientY);
+                }
+            });
+
+            // Mobile tap
+            document.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length > 0 && !e.target.closest('a, button, input')) {
+                    const touch = e.changedTouches[0];
+                    createBurst(touch.clientX, touch.clientY);
+                }
+            });
+        })();
+
+        // ============================================
+        // 5. TEXT REVEAL ANIMATION
+        // ============================================
+        (function initTextReveal() {
+            const textElements = document.querySelectorAll('.text-reveal');
+
+            textElements.forEach(el => {
+                const text = el.textContent;
+                el.innerHTML = '';
+
+                [...text].forEach((char, i) => {
+                    const span = document.createElement('span');
+                    span.className = char === ' ' ? 'char space' : 'char';
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.style.animationDelay = `${0.5 + i * 0.025}s`;
+                    el.appendChild(span);
+                });
+            });
+        })();
+
+        // ============================================
+        // 6. NUMBER COUNTER ANIMATION
+        // ============================================
+        (function initCounters() {
+            function animateCounter(element, targetValue, duration = 2000) {
+                const suffix = element.dataset.suffix || '';
+                const startTime = performance.now();
+                element.classList.add('counting');
+
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    const currentValue = Math.floor(targetValue * easeProgress);
+
+                    element.textContent = currentValue + suffix;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        element.classList.remove('counting');
+                    }
+                }
+
+                requestAnimationFrame(update);
+            }
+
+            function animateRangeCounter(element, startVal, endVal, duration = 2500) {
+                const suffix = element.dataset.suffix || '';
+                const startTime = performance.now();
+                element.classList.add('counting');
+
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+                    const currentStart = Math.floor(startVal * easeProgress);
+                    const currentEnd = Math.floor(endVal * easeProgress);
+
+                    element.textContent = `${currentStart}-${currentEnd}${suffix}`;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        element.classList.remove('counting');
+                    }
+                }
+
+                requestAnimationFrame(update);
+            }
+
+            const counters = document.querySelectorAll('.result-number[data-count], .result-number[data-count-range]');
+
+            const counterObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !entry.target.dataset.animated) {
+                        entry.target.dataset.animated = 'true';
+
+                        if (entry.target.dataset.count) {
+                            animateCounter(entry.target, parseInt(entry.target.dataset.count));
+                        } else if (entry.target.dataset.countRange) {
+                            const [start, end] = entry.target.dataset.countRange.split('-').map(Number);
+                            animateRangeCounter(entry.target, start, end);
+                        }
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            counters.forEach(counter => counterObserver.observe(counter));
+        })();
+
     </script>
 </body>
 </html>
