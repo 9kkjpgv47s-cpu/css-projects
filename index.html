@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- v2.1 - Visual Effects Update -->
-<html lang="en" style="cursor: none !important;">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -358,7 +358,7 @@
             display: none;
             flex-direction: column;
             gap: 5px;
-            cursor: none !important;
+            cursor: pointer;
             padding: 5px;
         }
 
@@ -534,7 +534,7 @@
                 color: var(--text-muted);
                 padding: 0.35rem 0.6rem;
                 border-radius: 20px;
-                cursor: none !important;
+                cursor: pointer;
                 transition: all 0.3s ease;
                 background: transparent;
                 border: 1px solid transparent;
@@ -734,7 +734,7 @@
                 color: var(--text-muted);
                 padding: 0.35rem 0.6rem;
                 border-radius: 20px;
-                cursor: none !important;
+                cursor: pointer;
                 transition: all 0.3s ease;
                 background: transparent;
                 border: 1px solid transparent;
@@ -915,7 +915,7 @@
             bottom: 0;
             width: 80px;
             z-index: 10;
-            cursor: none !important;
+            cursor: pointer;
         }
 
         .tier-hover-zone.left {
@@ -949,7 +949,7 @@
                 color: var(--text-muted);
                 padding: 0.4rem 0.75rem;
                 border-radius: 20px;
-                cursor: none !important;
+                cursor: pointer;
                 transition: all 0.3s ease;
                 background: transparent;
                 border: 1px solid transparent;
@@ -1208,42 +1208,13 @@
            Fullscreen overlay captures mouse and hides cursor
            ============================================ */
 
-        /* Cursor hiding overlay - sits on top of everything */
+        /* Custom cursor disabled - using standard cursor */
         #cursor-hide-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 999998;
-            cursor: none !important;
-            background: transparent;
-            /* Allow clicks to pass through */
-            pointer-events: none;
+            display: none;
         }
 
-        /* When mouse moves, briefly enable pointer events on overlay */
-        #cursor-hide-overlay.active {
-            pointer-events: auto;
-            cursor: none !important;
-        }
-
-        /* Canvas container - above overlay */
         #liquid-glass-cursor {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 999999;
-            overflow: hidden;
-            cursor: none !important;
-        }
-
-        /* FORCE cursor none on absolutely everything */
-        html, html *, body, body * {
-            cursor: none !important;
+            display: none;
         }
 
         /* ============================================
@@ -1335,7 +1306,7 @@
         }
     </style>
 </head>
-<body style="cursor: none !important;">
+<body>
     <!-- CURSOR HIDE OVERLAY - Invisible layer that hides the cursor -->
     <div id="cursor-hide-overlay"></div>
 
@@ -1973,10 +1944,10 @@
         })();
 
         // ============================================
-        // 2. LIQUID GLASS CURSOR V12 - CHROME FIX
-        // Maximum cursor hiding + single initialization guard
+        // 2. LIQUID GLASS CURSOR - DISABLED
+        // Custom cursor disabled - using standard browser cursor
         // ============================================
-        if (hasHover) {
+        if (false) { // DISABLED - set to (hasHover) to re-enable
             (function initFinalCursor() {
                 // Prevent double initialization
                 if (window._cursorInitialized) {
@@ -2406,7 +2377,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V20 - HYBRID: synthetic distortion visualization + iridescent bubble');
+                console.log('Custom cursor DISABLED - using standard browser cursor');
             })();
         }
 
