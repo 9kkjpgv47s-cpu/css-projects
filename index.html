@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.7 - 15 shapes on mobile -->
+<!-- v2.8 - Shapes faint behind text, not invisible -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1918,9 +1918,10 @@
                     this.rotation += this.rotationSpeed;
                     this.pulsePhase += this.pulseSpeed;
 
-                    // Fade out if in protected zone
+                    // Fade to almost invisible (not fully gone) when behind text
+                    const minOpacity = 0.08; // Still faintly visible behind text
                     if (isInProtectedZone(this.x, this.y, this.size)) {
-                        this.opacity = Math.max(0, this.opacity - 0.02);
+                        this.opacity = Math.max(minOpacity, this.opacity - 0.02);
                     } else {
                         this.opacity = Math.min(this.baseOpacity, this.opacity + 0.01);
                     }
