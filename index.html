@@ -2065,36 +2065,45 @@
                     }
                 }
 
-                // Spherical lens distortion function
-                function sphericalDistort(srcX, srcY, centerX, centerY, radius, strength, refractiveIndex) {
+                // Edge-pull distortion - pulls colors OUTWARD toward perimeter
+                // Like magnetic field pulling iron filings to the edge
+                function edgePullDistort(srcX, srcY, centerX, centerY, radius, strength) {
                     const dx = srcX - centerX;
                     const dy = srcY - centerY;
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    if (distance >= radius) {
-                        return { x: srcX, y: srcY, intensity: 0 };
+                    if (distance >= radius || distance < 0.001) {
+                        return { x: srcX, y: srcY, edgeProximity: distance >= radius ? 1 : 0 };
                     }
 
-                    // Normalized distance from center (0 at center, 1 at edge)
+                    // Normalized distance (0 at center, 1 at edge)
                     const normalizedDist = distance / radius;
 
-                    // Spherical lens formula - simulates looking through a glass sphere
-                    // Uses sine-based distortion for realistic glass curvature
-                    const theta = Math.asin(normalizedDist * config.edgeSharpness);
-                    const refractedAngle = Math.asin(Math.sin(theta) / refractiveIndex);
-                    const distortionAmount = (theta - refractedAngle) * strength * radius;
+                    // Edge-pull formula: stronger pull as we approach the edge
+                    // This creates compression at the perimeter
+                    const pullStrength = Math.pow(normalizedDist, 0.6) * strength;
 
-                    // Apply distortion radially outward (magnification at center)
+                    // Pull pixels OUTWARD (away from center, toward edge)
                     const angle = Math.atan2(dy, dx);
-                    const newDist = distance - distortionAmount * (1 - normalizedDist * normalizedDist);
+                    const pullAmount = pullStrength * radius * 0.4;
 
-                    const newX = centerX + Math.cos(angle) * newDist;
-                    const newY = centerY + Math.sin(angle) * newDist;
+                    // New distance is pushed outward, creating edge compression
+                    const newDist = distance + pullAmount * (1 - Math.pow(1 - normalizedDist, 2));
 
-                    // Intensity for edge effects (stronger at edges)
-                    const intensity = Math.pow(normalizedDist, 0.5);
+                    const newX = centerX + Math.cos(angle) * Math.min(newDist, radius * 0.98);
+                    const newY = centerY + Math.sin(angle) * Math.min(newDist, radius * 0.98);
 
-                    return { x: newX, y: newY, intensity };
+                    // Edge proximity for lightening effect (0 at center, 1 at edge)
+                    const edgeProximity = Math.pow(normalizedDist, 1.5);
+
+                    return { x: newX, y: newY, edgeProximity };
+                }
+
+                // Get normalized distance from arrow edge (0 at edge, 1 at center)
+                function getArrowEdgeProximity(px, py, arrowX, arrowY, size) {
+                    const edgeDist = getEdgeDistance(px, py, arrowX, arrowY, size);
+                    const maxDist = size * 0.3; // Normalize to reasonable range
+                    return Math.min(1, edgeDist / maxDist);
                 }
 
                 // Check if point is inside arrow polygon
@@ -2205,9 +2214,14 @@
                     }
 
                     // Calculate center of arrow for distortion
-                    const centerX = cursorX + currentSize * 0.3;
-                    const centerY = cursorY + currentSize * 0.5;
-                    const radius = currentSize * 0.7;
+                    const centerX = cursorX + currentSize * 0.35;
+                    const centerY = cursorY + currentSize * 0.45;
+                    const radius = currentSize * 0.8;
+
+                    // Edge lightening configuration
+                    const edgeLightenWidth = currentSize * 0.25; // Width of edge lightening zone
+                    const maxLighten = isHovering ? 0.85 : 0.7; // Max brightness boost at edge
+                    const edgeCompression = currentDistortion * 1.5; // How much colors compress at edge
 
                     // Process each pixel
                     for (let py = 0; py < height; py++) {
@@ -2220,17 +2234,20 @@
                                 continue; // Leave transparent
                             }
 
-                            // Apply spherical distortion
-                            const distorted = sphericalDistort(
+                            // Get distance from arrow edge
+                            const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, currentSize);
+                            const edgeProximity = 1 - Math.min(1, edgeDist / edgeLightenWidth);
+
+                            // Apply edge-pull distortion (pulls colors toward perimeter)
+                            const distorted = edgePullDistort(
                                 screenX, screenY,
                                 centerX, centerY,
                                 radius,
-                                currentDistortion,
-                                config.refractiveIndex
+                                edgeCompression
                             );
 
-                            // Chromatic aberration - split RGB slightly
-                            const aberrationScale = distorted.intensity * chromatic;
+                            // Enhanced chromatic aberration at edges
+                            const aberrationScale = edgeProximity * chromatic * 2;
 
                             // Sample source pixels with chromatic aberration
                             const srcPxR = Math.round(distorted.x - aberrationScale - x1);
@@ -2242,37 +2259,57 @@
 
                             // Get color channels with bounds checking
                             const outIdx = (py * width + px) * 4;
+                            let r = 0, g = 0, b = 0;
 
                             // Red channel
                             if (srcPxR >= 0 && srcPxR < srcData.width && srcPyR >= 0 && srcPyR < srcData.height) {
                                 const srcIdxR = (srcPyR * srcData.width + srcPxR) * 4;
-                                outputData.data[outIdx] = srcData.data[srcIdxR];
+                                r = srcData.data[srcIdxR];
                             }
 
                             // Green channel
                             if (srcPxG >= 0 && srcPxG < srcData.width && srcPyG >= 0 && srcPyG < srcData.height) {
                                 const srcIdxG = (srcPyG * srcData.width + srcPxG) * 4;
-                                outputData.data[outIdx + 1] = srcData.data[srcIdxG + 1];
+                                g = srcData.data[srcIdxG + 1];
                             }
 
                             // Blue channel
                             if (srcPxB >= 0 && srcPxB < srcData.width && srcPyB >= 0 && srcPyB < srcData.height) {
                                 const srcIdxB = (srcPyB * srcData.width + srcPxB) * 4;
-                                outputData.data[outIdx + 2] = srcData.data[srcIdxB + 2];
+                                b = srcData.data[srcIdxB + 2];
                             }
 
-                            // Alpha - full opacity inside arrow
-                            outputData.data[outIdx + 3] = 255;
+                            // === EDGE LIGHTENING EFFECT ===
+                            // As pixels approach the edge, they get progressively lighter
+                            // This creates the defined cursor outline
+                            const lightenAmount = Math.pow(edgeProximity, 1.2) * maxLighten;
 
-                            // Edge glow effect
-                            const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, currentSize);
+                            // Apply lightening - blend toward white at edges
+                            r = Math.min(255, r + (255 - r) * lightenAmount);
+                            g = Math.min(255, g + (255 - g) * lightenAmount);
+                            b = Math.min(255, b + (255 - b) * lightenAmount);
+
+                            // Extra bright rim at the very edge (last 2-3 pixels)
                             if (edgeDist < 3) {
-                                const edgeIntensity = 1 - (edgeDist / 3);
-                                const glowColor = isHovering ? [0, 217, 255] : [255, 255, 255];
-                                outputData.data[outIdx] = Math.min(255, outputData.data[outIdx] + glowColor[0] * edgeIntensity * 0.3);
-                                outputData.data[outIdx + 1] = Math.min(255, outputData.data[outIdx + 1] + glowColor[1] * edgeIntensity * 0.3);
-                                outputData.data[outIdx + 2] = Math.min(255, outputData.data[outIdx + 2] + glowColor[2] * edgeIntensity * 0.3);
+                                const rimIntensity = Math.pow(1 - (edgeDist / 3), 2);
+                                const rimBoost = rimIntensity * 0.5;
+                                r = Math.min(255, r + (255 - r) * rimBoost);
+                                g = Math.min(255, g + (255 - g) * rimBoost);
+                                b = Math.min(255, b + (255 - b) * rimBoost);
+
+                                // Subtle color tint on hover
+                                if (isHovering) {
+                                    r = Math.min(255, r * 0.9);
+                                    g = Math.min(255, g + 20 * rimIntensity);
+                                    b = Math.min(255, b + 40 * rimIntensity);
+                                }
                             }
+
+                            // Store final pixel values
+                            outputData.data[outIdx] = Math.round(r);
+                            outputData.data[outIdx + 1] = Math.round(g);
+                            outputData.data[outIdx + 2] = Math.round(b);
+                            outputData.data[outIdx + 3] = 255;
                         }
                     }
 
