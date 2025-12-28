@@ -2113,34 +2113,52 @@
                 }
 
                 // ==========================================
-                // EDGE-PULL DISTORTION (from V4)
-                // Pulls colors OUTWARD toward edge like magnet
+                // COMBINED DISTORTION EFFECTS
+                // 1. Magnifying glass (center enlargement)
+                // 2. Fisheye/barrel (bulge outward)
+                // 3. Edge-pull (stretch toward perimeter)
+                // 4. Refraction (light bending)
                 // ==========================================
-                function edgePullDistort(x, y, cx, cy, radius, strength) {
+                function getDistortedSample(x, y, cx, cy, radius) {
                     const dx = x - cx, dy = y - cy;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist >= radius || dist < 0.01) return { x, y, edgeFactor: dist >= radius ? 1 : 0 };
-
                     const norm = dist / radius;
-                    const pull = Math.pow(norm, 0.5) * strength;
+
+                    if (norm >= 1) return { x, y, strength: 0 };
+
                     const angle = Math.atan2(dy, dx);
-                    const newDist = dist + pull * radius * 0.5 * (1 - Math.pow(1 - norm, 3));
+
+                    // 1. Magnifying glass - center pulls inward (enlarges)
+                    const magnify = Math.pow(1 - norm, 2) * 0.3;
+
+                    // 2. Fisheye/barrel - bulge outward
+                    const fisheye = Math.pow(norm, 0.7) * 0.25;
+
+                    // 3. Edge-pull - stretch toward perimeter
+                    const edgePull = norm * Math.pow(norm, 0.5) * 0.35;
+
+                    // 4. Refraction - angular shift based on edge proximity
+                    const refract = Math.sin(norm * Math.PI) * 0.15;
+
+                    // Combine effects
+                    const totalShift = (-magnify + fisheye + edgePull + refract) * radius;
+                    const newDist = dist + totalShift;
 
                     return {
-                        x: cx + Math.cos(angle) * Math.min(newDist, radius * 0.99),
-                        y: cy + Math.sin(angle) * Math.min(newDist, radius * 0.99),
-                        edgeFactor: Math.pow(norm, 1.2)
+                        x: cx + Math.cos(angle) * newDist,
+                        y: cy + Math.sin(angle) * newDist,
+                        strength: Math.pow(norm, 0.6) // Effect strength for RGB
                     };
                 }
 
                 // ==========================================
-                // MAIN RENDER - PIXEL-LEVEL DISTORTION
-                // Crystal clear, NO blur, real effects
+                // MAIN RENDER - 100% TRANSPARENT + EDGE DISTORTION
+                // Crystal clear, NO blur, NO fill
                 // ==========================================
                 function render() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                    // Spring physics
+                    // Spring physics for smooth follow
                     velX += (mouseX - cursorX) * 0.15;
                     velY += (mouseY - cursorY) * 0.15;
                     velX *= 0.72;
@@ -2153,18 +2171,17 @@
                         return;
                     }
 
-                    // Current properties
                     const size = isClicking ? 26 : (isHovering ? 38 : 30);
-                    const distortStrength = isClicking ? 0.8 : (isHovering ? 0.6 : 0.45);
-                    const chromatic = isHovering ? 3 : 2;
-
-                    // Cursor center for distortion calculations
                     const centerX = cursorX + size * 0.35;
                     const centerY = cursorY + size * 0.45;
-                    const radius = size * 0.7;
+                    const radius = size * 0.6;
 
-                    // Create pixel buffer for the cursor area
-                    const pad = 4;
+                    // Edge zone where RGB distortion is visible
+                    const edgeWidth = 4; // pixels from edge where effect shows
+                    const rgbStrength = isHovering ? 2.5 : 1.8; // Subtle RGB split
+
+                    // Create pixel buffer
+                    const pad = 6;
                     const x1 = Math.floor(cursorX - pad);
                     const y1 = Math.floor(cursorY - pad);
                     const w = Math.ceil(size + pad * 2);
@@ -2178,123 +2195,98 @@
                     const imgData = ctx.createImageData(w, h);
                     const pixels = imgData.data;
 
-                    // Base colors for glass effect
-                    const baseR = isHovering ? 180 : 220;
-                    const baseG = isHovering ? 210 : 230;
-                    const baseB = isHovering ? 255 : 250;
-
-                    // Process each pixel
+                    // Process each pixel - ONLY draw at edges
                     for (let py = 0; py < h; py++) {
                         for (let px = 0; px < w; px++) {
                             const screenX = x1 + px;
                             const screenY = y1 + py;
 
-                            // Skip if outside arrow
                             if (!isInsideArrow(screenX, screenY, cursorX, cursorY, size)) continue;
 
-                            // Get edge distance for effects
                             const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, size);
-                            const edgeZone = size * 0.2; // Edge zone width
-                            const edgeProximity = Math.max(0, 1 - edgeDist / edgeZone);
 
-                            // Apply edge-pull distortion
-                            const distorted = edgePullDistort(screenX, screenY, centerX, centerY, radius, distortStrength);
+                            // Only render in edge zone - center is 100% transparent
+                            if (edgeDist > edgeWidth) continue;
 
-                            // Chromatic aberration - split RGB channels
-                            const aberration = edgeProximity * chromatic;
+                            // Get distortion for this pixel
+                            const distort = getDistortedSample(screenX, screenY, centerX, centerY, radius);
 
-                            // Calculate distorted sample positions for each channel
+                            // Edge proximity (0 at edge, 1 at inner boundary)
+                            const edgeFactor = edgeDist / edgeWidth;
+
+                            // RGB chromatic aberration - split channels at edge
                             const angle = Math.atan2(screenY - centerY, screenX - centerX);
-                            const rX = distorted.x - Math.cos(angle) * aberration;
-                            const rY = distorted.y - Math.sin(angle) * aberration;
-                            const bX = distorted.x + Math.cos(angle) * aberration;
-                            const bY = distorted.y + Math.sin(angle) * aberration;
+                            const aberration = (1 - edgeFactor) * rgbStrength * (1 + distort.strength);
 
-                            // Base color with distortion-based variation
-                            const distortOffset = distorted.edgeFactor * 30;
-                            let r = baseR + distortOffset + (rX - screenX) * 2;
-                            let g = baseG + distortOffset * 0.8;
-                            let b = baseB - distortOffset * 0.3 + (bX - screenX) * 2;
+                            // Offset each color channel differently
+                            const rOffset = aberration * 1.2;
+                            const gOffset = aberration * 0.0; // Green stays centered
+                            const bOffset = aberration * -1.0;
 
-                            // EDGE LIGHTENING - colors get brighter at edge
-                            const lightenAmount = Math.pow(edgeProximity, 0.8) * 0.7;
-                            r = r + (255 - r) * lightenAmount;
-                            g = g + (255 - g) * lightenAmount;
-                            b = b + (255 - b) * lightenAmount;
+                            // Calculate color based on distortion direction
+                            const distortAngle = Math.atan2(distort.y - screenY, distort.x - screenX);
+                            const distortMag = Math.sqrt((distort.x - screenX) ** 2 + (distort.y - screenY) ** 2);
 
-                            // BRIGHT RIM at very edge (last 2-3 pixels)
-                            if (edgeDist < 2.5) {
-                                const rimIntensity = Math.pow(1 - edgeDist / 2.5, 1.5);
-                                const rimBoost = rimIntensity * 0.6;
-                                r = r + (255 - r) * rimBoost;
-                                g = g + (255 - g) * rimBoost;
-                                b = b + (255 - b) * rimBoost;
+                            // RGB values based on chromatic split
+                            let r = 255 * (0.3 + 0.7 * Math.abs(Math.cos(distortAngle + rOffset)));
+                            let g = 255 * (0.3 + 0.7 * Math.abs(Math.cos(distortAngle + gOffset)));
+                            let b = 255 * (0.3 + 0.7 * Math.abs(Math.cos(distortAngle + bOffset)));
 
-                                // Cyan tint on hover rim
-                                if (isHovering) {
-                                    r *= (1 - rimIntensity * 0.15);
-                                    b = Math.min(255, b + rimIntensity * 25);
-                                }
+                            // Boost based on distortion magnitude
+                            const boost = Math.min(1, distortMag * 0.15);
+                            r = r + (255 - r) * boost * 0.5;
+                            g = g + (255 - g) * boost * 0.3;
+                            b = b + (255 - b) * boost * 0.6;
+
+                            // Alpha fades from edge (visible) to inner boundary (invisible)
+                            // Creates smooth transition to transparent center
+                            let alpha = (1 - edgeFactor) * 180;
+
+                            // Extra bright right at the edge (last 1.5 pixels)
+                            if (edgeDist < 1.5) {
+                                const rimBoost = 1 - edgeDist / 1.5;
+                                r = r + (255 - r) * rimBoost * 0.7;
+                                g = g + (255 - g) * rimBoost * 0.7;
+                                b = b + (255 - b) * rimBoost * 0.7;
+                                alpha = alpha + (255 - alpha) * rimBoost * 0.5;
                             }
 
-                            // Alpha: solid at edge, slightly transparent center
-                            const centerDist = Math.sqrt((screenX - centerX) ** 2 + (screenY - centerY) ** 2) / radius;
-                            let alpha = 180 + edgeProximity * 75;
-                            if (centerDist < 0.3) alpha = 160; // Slightly more transparent at very center
-
-                            // Click state: extra bright
+                            // Click brightens
                             if (isClicking) {
-                                r = Math.min(255, r * 1.15);
-                                g = Math.min(255, g * 1.15);
-                                b = Math.min(255, b * 1.1);
-                                alpha = Math.min(255, alpha + 30);
+                                r = Math.min(255, r * 1.2);
+                                g = Math.min(255, g * 1.2);
+                                b = Math.min(255, b * 1.15);
                             }
 
-                            // Store pixel
                             const idx = (py * w + px) * 4;
-                            pixels[idx] = Math.min(255, Math.max(0, Math.round(r)));
-                            pixels[idx + 1] = Math.min(255, Math.max(0, Math.round(g)));
-                            pixels[idx + 2] = Math.min(255, Math.max(0, Math.round(b)));
-                            pixels[idx + 3] = Math.min(255, Math.max(0, Math.round(alpha)));
+                            pixels[idx] = Math.round(Math.min(255, Math.max(0, r)));
+                            pixels[idx + 1] = Math.round(Math.min(255, Math.max(0, g)));
+                            pixels[idx + 2] = Math.round(Math.min(255, Math.max(0, b)));
+                            pixels[idx + 3] = Math.round(Math.min(255, Math.max(0, alpha)));
                         }
                     }
 
-                    // Draw the distorted cursor pixels
                     ctx.putImageData(imgData, x1, y1);
 
                     // ========================================
-                    // CRISP OUTLINE - NO BLUR, just solid line
+                    // CRISP OUTLINE - thin, sharp edge
                     // ========================================
                     ctx.save();
                     drawArrow(cursorX, cursorY, size);
-                    ctx.strokeStyle = isHovering ? 'rgba(200, 230, 255, 1)' : 'rgba(255, 255, 255, 0.95)';
-                    ctx.lineWidth = isHovering ? 1.5 : 1.2;
-                    ctx.lineJoin = 'round';
-                    ctx.lineCap = 'round';
+                    ctx.strokeStyle = isHovering ? 'rgba(220, 240, 255, 0.9)' : 'rgba(255, 255, 255, 0.85)';
+                    ctx.lineWidth = 1;
+                    ctx.lineJoin = 'miter';
+                    ctx.lineCap = 'square';
                     ctx.stroke();
                     ctx.restore();
 
                     // ========================================
-                    // TOP HIGHLIGHT - glass shine
-                    // ========================================
-                    ctx.save();
-                    drawArrow(cursorX, cursorY, size);
-                    ctx.clip();
-                    const shine = ctx.createLinearGradient(cursorX, cursorY, cursorX + size * 0.35, cursorY + size * 0.35);
-                    shine.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
-                    shine.addColorStop(0.4, 'rgba(255, 255, 255, 0.15)');
-                    shine.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                    ctx.fillStyle = shine;
-                    ctx.fillRect(cursorX, cursorY, size * 0.45, size * 0.4);
-                    ctx.restore();
-
-                    // ========================================
-                    // TIP DOT - precise click point
+                    // TIP DOT - click point indicator
                     // ========================================
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(cursorX + 0.5, cursorY + 0.5, 1.5, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                    ctx.arc(cursorX + 0.5, cursorY + 0.5, 1, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                     ctx.fill();
                     ctx.restore();
 
@@ -2328,7 +2320,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V14 - Fixed DPR offset causing dual cursor');
+                console.log('Liquid Glass Cursor V15 - 100% transparent + combined distortion + subtle RGB');
             })();
         }
 
