@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v1.1 - Founder Page - Fixed mobile text wrapping -->
+<!-- v1.3 - Founder Page - No mid-word breaks -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -49,6 +49,7 @@
             scroll-behavior: smooth;
             font-size: 16px;
             overflow-x: hidden;
+            width: 100%;
         }
 
         body {
@@ -57,23 +58,27 @@
             color: var(--text-primary);
             line-height: 1.7;
             overflow-x: hidden;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
             position: relative;
             width: 100%;
             max-width: 100vw;
+            min-width: 0;
         }
 
         /* ============================================
            DYNAMIC TEXT RESIZING - Extension/Resize Safe
            ============================================ */
 
-        /* Prevent mid-word breaks globally */
+        /* Prevent mid-word breaks globally - DISABLE HYPHENATION */
         h1, h2, h3, h4, h5, h6, p, span, a, li, td, th, label, .btn {
             overflow-wrap: break-word;
             word-wrap: break-word;
-            -webkit-hyphens: auto;
-            -moz-hyphens: auto;
-            -ms-hyphens: auto;
-            hyphens: auto;
+            word-break: normal;
+            -webkit-hyphens: none;
+            -moz-hyphens: none;
+            -ms-hyphens: none;
+            hyphens: none;
         }
 
         /* Flexible containers that adapt to available space */
@@ -94,16 +99,45 @@
             }
         }
 
-        /* Mobile-specific text adjustments */
-        @media (max-width: 480px) {
+        /* Mobile-specific text adjustments - NO MID-WORD BREAKS */
+        @media (max-width: 768px) {
             .founder-content p {
-                font-size: 1rem;
-                line-height: 1.7;
+                font-size: 1rem !important;
+                line-height: 1.75;
                 text-align: left;
+                word-break: normal !important;
+                overflow-wrap: break-word;
+                -webkit-hyphens: none !important;
+                hyphens: none !important;
+                white-space: normal;
             }
             .container {
-                padding-left: 1.25rem;
-                padding-right: 1.25rem;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-left: 1.25rem !important;
+                padding-right: 1.25rem !important;
+                box-sizing: border-box !important;
+            }
+            .founder-content .container {
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            /* Ensure paragraphs don't overflow */
+            p, h1, h2, h3, h4, .intro, .cta-desc {
+                max-width: 100% !important;
+                word-break: normal !important;
+                -webkit-hyphens: none !important;
+                hyphens: none !important;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            .founder-content p {
+                font-size: 0.95rem !important;
             }
         }
 
