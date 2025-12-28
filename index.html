@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- v2.1 - Visual Effects Update -->
-<html lang="en">
+<html lang="en" style="cursor: none !important;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1204,9 +1204,24 @@
         }
 
         /* ============================================
-           LIQUID GLASS CURSOR V6 - SINGLE CURSOR SYSTEM
-           JavaScript handles all cursor hiding
+           LIQUID GLASS CURSOR V9 - AGGRESSIVE HIDING
+           CSS loads BEFORE JavaScript - hides cursor immediately
            ============================================ */
+
+        /* NUCLEAR OPTION: Hide cursor on EVERYTHING */
+        html, body, div, span, p, a, button, input, textarea, select,
+        h1, h2, h3, h4, h5, h6, section, nav, footer, header, main,
+        ul, li, img, svg, canvas, label, form, table, tr, td, th,
+        article, aside, figure, figcaption, video, audio, iframe,
+        *, *::before, *::after {
+            cursor: none !important;
+        }
+
+        /* Target hover states too */
+        a:hover, button:hover, input:hover, [role="button"]:hover,
+        *:hover, *:focus, *:active {
+            cursor: none !important;
+        }
 
         /* Canvas container */
         #liquid-glass-cursor {
@@ -1309,7 +1324,7 @@
         }
     </style>
 </head>
-<body>
+<body style="cursor: none !important;">
     <!-- Geometric Background Canvas -->
     <canvas id="geometricBg"></canvas>
 
@@ -2288,7 +2303,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V8 - FINAL (V6 hiding + V4 effects)');
+                console.log('Liquid Glass Cursor V9 - CSS hiding + V4 effects');
             })();
         }
 
