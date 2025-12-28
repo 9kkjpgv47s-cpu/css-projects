@@ -1204,14 +1204,20 @@
         }
 
         /* ============================================
-           LIQUID GLASS CURSOR - TRUE OPTICAL DISTORTION
-           Canvas-based real pixel warping
+           LIQUID GLASS CURSOR V5 - VISIBLE GLASS ARROW
+           Always visible with distortion effects
            ============================================ */
 
+        /* AGGRESSIVELY hide default cursor on desktop */
         @media (hover: hover) and (pointer: fine) {
-            * { cursor: none !important; }
+            *, *::before, *::after { cursor: none !important; }
+            html { cursor: none !important; }
+            body { cursor: none !important; }
+            a, button, input, textarea, select { cursor: none !important; }
+            [role="button"], [onclick] { cursor: none !important; }
         }
 
+        /* Cursor container - full viewport overlay */
         #liquid-glass-cursor {
             position: fixed;
             top: 0;
@@ -1220,13 +1226,12 @@
             height: 100vh;
             pointer-events: none;
             z-index: 999999;
+            overflow: hidden;
         }
 
-        .liquid-glass-filter {
-            position: absolute;
-            width: 0;
-            height: 0;
-            overflow: hidden;
+        /* Prevent any cursor from showing */
+        .cursor-active * {
+            cursor: none !important;
         }
 
         /* ============================================
@@ -1953,8 +1958,9 @@
         })();
 
         // ============================================
-        // 2. LIQUID GLASS CURSOR - TRUE OPTICAL DISTORTION
-        // Real-time pixel warping like iOS liquid glass
+        // ============================================
+        // 2. LIQUID GLASS CURSOR V5 - VISIBLE GLASS ARROW
+        // Always visible with true glass distortion effects
         // ============================================
         if (hasHover) {
             (function initLiquidGlassCursor() {
@@ -1962,32 +1968,34 @@
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-                // Cursor configuration
+                // Add class to body to ensure cursor is hidden
+                document.body.classList.add('cursor-active');
+                document.documentElement.style.cursor = 'none';
+
+                // Configuration
                 const config = {
-                    size: 36,                    // Base cursor size
-                    hoverSize: 48,              // Size when hovering
-                    clickSize: 30,              // Size when clicking
-                    distortionStrength: 0.45,   // How much to warp (0-1)
-                    hoverDistortion: 0.6,       // Distortion on hover
-                    clickDistortion: 0.75,      // Distortion on click
-                    refractiveIndex: 1.5,       // Glass refraction simulation
-                    springStiffness: 0.12,      // Movement spring
-                    springDamping: 0.72,        // Movement damping
-                    chromaticAberration: 2,     // RGB split amount
-                    edgeSharpness: 0.92         // How sharp the edge distortion is
+                    size: 32,
+                    hoverSize: 42,
+                    clickSize: 28,
+                    springStiffness: 0.15,
+                    springDamping: 0.75,
+                    // Glass appearance
+                    glassOpacity: 0.85,
+                    edgeBrightness: 1.0,      // Full white edges
+                    innerGlow: 0.3,           // Subtle inner fill
+                    refractionStrength: 0.35, // How much distortion
+                    chromaticAberration: 1.5  // RGB split
                 };
 
                 // State
-                let mouseX = -200, mouseY = -200;
-                let cursorX = -200, cursorY = -200;
+                let mouseX = -100, mouseY = -100;
+                let cursorX = -100, cursorY = -100;
                 let velX = 0, velY = 0;
                 let isHovering = false;
                 let isClicking = false;
-                let pageSnapshot = null;
-                let lastSnapshotTime = 0;
-                const snapshotInterval = 50; // Update snapshot every 50ms
+                let isVisible = false;
 
-                // Arrow cursor polygon points (normalized 0-1, origin top-left)
+                // Arrow polygon (normalized 0-1)
                 const arrowPath = [
                     { x: 0, y: 0 },
                     { x: 0, y: 1 },
@@ -1998,128 +2006,41 @@
                     { x: 1, y: 0.68 }
                 ];
 
-                // Set up canvas
+                // Setup canvas
                 function setupCanvas() {
                     const dpr = window.devicePixelRatio || 1;
                     canvas.width = window.innerWidth * dpr;
                     canvas.height = window.innerHeight * dpr;
                     canvas.style.width = window.innerWidth + 'px';
                     canvas.style.height = window.innerHeight + 'px';
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
                     ctx.scale(dpr, dpr);
                 }
                 setupCanvas();
                 window.addEventListener('resize', setupCanvas);
 
-                // Capture page snapshot for distortion source
-                async function captureSnapshot() {
-                    const now = Date.now();
-                    if (now - lastSnapshotTime < snapshotInterval) return;
-                    lastSnapshotTime = now;
-
-                    try {
-                        // Create off-screen canvas from current view
-                        const tempCanvas = document.createElement('canvas');
-                        const tempCtx = tempCanvas.getContext('2d');
-                        tempCanvas.width = window.innerWidth;
-                        tempCanvas.height = window.innerHeight;
-
-                        // Draw page elements (simplified - captures background)
-                        tempCtx.fillStyle = getComputedStyle(document.body).backgroundColor || '#1f1f2e';
-                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-                        // Capture visible elements
-                        const elements = document.querySelectorAll('h1, h2, h3, p, a, button, .logo, .service-card, .tier-card, .result-card, nav, section');
-                        elements.forEach(el => {
-                            const rect = el.getBoundingClientRect();
-                            const style = getComputedStyle(el);
-                            const color = style.color || '#ffffff';
-                            const bgColor = style.backgroundColor;
-
-                            if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)') {
-                                tempCtx.fillStyle = bgColor;
-                                tempCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
-                            }
-
-                            // Draw text approximation
-                            tempCtx.fillStyle = color;
-                            tempCtx.font = style.font || '16px sans-serif';
-                            if (el.textContent && rect.width > 0) {
-                                tempCtx.fillText(el.textContent.substring(0, 50), rect.left, rect.top + rect.height / 2);
-                            }
-                        });
-
-                        pageSnapshot = tempCanvas;
-                    } catch (e) {
-                        // Fallback: use gradient
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = window.innerWidth;
-                        tempCanvas.height = window.innerHeight;
-                        const tempCtx = tempCanvas.getContext('2d');
-                        const gradient = tempCtx.createLinearGradient(0, 0, tempCanvas.width, tempCanvas.height);
-                        gradient.addColorStop(0, '#1f1f2e');
-                        gradient.addColorStop(0.5, '#2a2a3e');
-                        gradient.addColorStop(1, '#1f1f2e');
-                        tempCtx.fillStyle = gradient;
-                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                        pageSnapshot = tempCanvas;
-                    }
+                // Draw arrow path at position
+                function drawArrowPath(x, y, size) {
+                    ctx.beginPath();
+                    arrowPath.forEach((p, i) => {
+                        const px = x + p.x * size;
+                        const py = y + p.y * size;
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    });
+                    ctx.closePath();
                 }
 
-                // Edge-pull distortion - pulls colors OUTWARD toward perimeter
-                // Like magnetic field pulling iron filings to the edge
-                function edgePullDistort(srcX, srcY, centerX, centerY, radius, strength) {
-                    const dx = srcX - centerX;
-                    const dy = srcY - centerY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance >= radius || distance < 0.001) {
-                        return { x: srcX, y: srcY, edgeProximity: distance >= radius ? 1 : 0 };
-                    }
-
-                    // Normalized distance (0 at center, 1 at edge)
-                    const normalizedDist = distance / radius;
-
-                    // Edge-pull formula: stronger pull as we approach the edge
-                    // This creates compression at the perimeter
-                    const pullStrength = Math.pow(normalizedDist, 0.6) * strength;
-
-                    // Pull pixels OUTWARD (away from center, toward edge)
-                    const angle = Math.atan2(dy, dx);
-                    const pullAmount = pullStrength * radius * 0.4;
-
-                    // New distance is pushed outward, creating edge compression
-                    const newDist = distance + pullAmount * (1 - Math.pow(1 - normalizedDist, 2));
-
-                    const newX = centerX + Math.cos(angle) * Math.min(newDist, radius * 0.98);
-                    const newY = centerY + Math.sin(angle) * Math.min(newDist, radius * 0.98);
-
-                    // Edge proximity for lightening effect (0 at center, 1 at edge)
-                    const edgeProximity = Math.pow(normalizedDist, 1.5);
-
-                    return { x: newX, y: newY, edgeProximity };
-                }
-
-                // Get normalized distance from arrow edge (0 at edge, 1 at center)
-                function getArrowEdgeProximity(px, py, arrowX, arrowY, size) {
-                    const edgeDist = getEdgeDistance(px, py, arrowX, arrowY, size);
-                    const maxDist = size * 0.3; // Normalize to reasonable range
-                    return Math.min(1, edgeDist / maxDist);
-                }
-
-                // Check if point is inside arrow polygon
+                // Check if point is inside arrow
                 function isInsideArrow(px, py, arrowX, arrowY, size) {
-                    // Convert to normalized coordinates
                     const nx = (px - arrowX) / size;
                     const ny = (py - arrowY) / size;
-
                     if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return false;
 
-                    // Ray casting algorithm for polygon
                     let inside = false;
                     for (let i = 0, j = arrowPath.length - 1; i < arrowPath.length; j = i++) {
                         const xi = arrowPath[i].x, yi = arrowPath[i].y;
                         const xj = arrowPath[j].x, yj = arrowPath[j].y;
-
                         if (((yi > ny) !== (yj > ny)) && (nx < (xj - xi) * (ny - yi) / (yj - yi) + xi)) {
                             inside = !inside;
                         }
@@ -2127,24 +2048,22 @@
                     return inside;
                 }
 
-                // Get distance to arrow edge for smooth falloff
+                // Get distance to nearest edge
                 function getEdgeDistance(px, py, arrowX, arrowY, size) {
                     const nx = (px - arrowX) / size;
                     const ny = (py - arrowY) / size;
-
                     let minDist = Infinity;
+
                     for (let i = 0; i < arrowPath.length; i++) {
                         const j = (i + 1) % arrowPath.length;
                         const x1 = arrowPath[i].x, y1 = arrowPath[i].y;
                         const x2 = arrowPath[j].x, y2 = arrowPath[j].y;
 
-                        // Distance to line segment
                         const A = nx - x1, B = ny - y1;
                         const C = x2 - x1, D = y2 - y1;
                         const dot = A * C + B * D;
                         const lenSq = C * C + D * D;
-                        let t = lenSq !== 0 ? dot / lenSq : -1;
-                        t = Math.max(0, Math.min(1, t));
+                        let t = lenSq !== 0 ? Math.max(0, Math.min(1, dot / lenSq)) : 0;
 
                         const nearX = x1 + t * C;
                         const nearY = y1 + t * D;
@@ -2154,222 +2073,208 @@
                     return minDist * size;
                 }
 
-                // Main render function
+                // Main render
                 function render() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                    // Spring physics for smooth cursor movement
-                    const dx = mouseX - cursorX;
-                    const dy = mouseY - cursorY;
-                    velX += dx * config.springStiffness;
-                    velY += dy * config.springStiffness;
+                    // Spring physics
+                    velX += (mouseX - cursorX) * config.springStiffness;
+                    velY += (mouseY - cursorY) * config.springStiffness;
                     velX *= config.springDamping;
                     velY *= config.springDamping;
                     cursorX += velX;
                     cursorY += velY;
 
-                    // Current cursor properties
-                    const currentSize = isClicking ? config.clickSize : (isHovering ? config.hoverSize : config.size);
-                    const currentDistortion = isClicking ? config.clickDistortion : (isHovering ? config.hoverDistortion : config.distortionStrength);
-                    const chromatic = isHovering ? config.chromaticAberration * 1.5 : config.chromaticAberration;
-
-                    // Define cursor bounds with padding for distortion
-                    const padding = currentSize * 0.5;
-                    const x1 = Math.floor(cursorX - padding);
-                    const y1 = Math.floor(cursorY - padding);
-                    const x2 = Math.ceil(cursorX + currentSize + padding);
-                    const y2 = Math.ceil(cursorY + currentSize + padding);
-                    const width = x2 - x1;
-                    const height = y2 - y1;
-
-                    if (width <= 0 || height <= 0 || cursorX < -100) {
+                    if (!isVisible || cursorX < -50) {
                         requestAnimationFrame(render);
                         return;
                     }
 
-                    // Capture snapshot periodically
-                    captureSnapshot();
+                    // Current size
+                    const size = isClicking ? config.clickSize : (isHovering ? config.hoverSize : config.size);
+                    const refraction = isHovering ? config.refractionStrength * 1.3 : config.refractionStrength;
 
-                    if (!pageSnapshot) {
-                        requestAnimationFrame(render);
-                        return;
-                    }
-
-                    // Create output image data
-                    const outputData = ctx.createImageData(width, height);
-                    const srcCtx = pageSnapshot.getContext('2d');
-
-                    // Get source image data from snapshot
-                    let srcData;
-                    try {
-                        srcData = srcCtx.getImageData(
-                            Math.max(0, x1),
-                            Math.max(0, y1),
-                            Math.min(width, pageSnapshot.width - x1),
-                            Math.min(height, pageSnapshot.height - y1)
-                        );
-                    } catch (e) {
-                        requestAnimationFrame(render);
-                        return;
-                    }
-
-                    // Calculate center of arrow for distortion
-                    const centerX = cursorX + currentSize * 0.35;
-                    const centerY = cursorY + currentSize * 0.45;
-                    const radius = currentSize * 0.8;
-
-                    // Edge lightening configuration
-                    const edgeLightenWidth = currentSize * 0.25; // Width of edge lightening zone
-                    const maxLighten = isHovering ? 0.85 : 0.7; // Max brightness boost at edge
-                    const edgeCompression = currentDistortion * 1.5; // How much colors compress at edge
-
-                    // Process each pixel
-                    for (let py = 0; py < height; py++) {
-                        for (let px = 0; px < width; px++) {
-                            const screenX = x1 + px;
-                            const screenY = y1 + py;
-
-                            // Check if inside arrow shape
-                            if (!isInsideArrow(screenX, screenY, cursorX, cursorY, currentSize)) {
-                                continue; // Leave transparent
-                            }
-
-                            // Get distance from arrow edge
-                            const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, currentSize);
-                            const edgeProximity = 1 - Math.min(1, edgeDist / edgeLightenWidth);
-
-                            // Apply edge-pull distortion (pulls colors toward perimeter)
-                            const distorted = edgePullDistort(
-                                screenX, screenY,
-                                centerX, centerY,
-                                radius,
-                                edgeCompression
-                            );
-
-                            // Enhanced chromatic aberration at edges
-                            const aberrationScale = edgeProximity * chromatic * 2;
-
-                            // Sample source pixels with chromatic aberration
-                            const srcPxR = Math.round(distorted.x - aberrationScale - x1);
-                            const srcPyR = Math.round(distorted.y - y1);
-                            const srcPxG = Math.round(distorted.x - x1);
-                            const srcPyG = Math.round(distorted.y - y1);
-                            const srcPxB = Math.round(distorted.x + aberrationScale - x1);
-                            const srcPyB = Math.round(distorted.y - y1);
-
-                            // Get color channels with bounds checking
-                            const outIdx = (py * width + px) * 4;
-                            let r = 0, g = 0, b = 0;
-
-                            // Red channel
-                            if (srcPxR >= 0 && srcPxR < srcData.width && srcPyR >= 0 && srcPyR < srcData.height) {
-                                const srcIdxR = (srcPyR * srcData.width + srcPxR) * 4;
-                                r = srcData.data[srcIdxR];
-                            }
-
-                            // Green channel
-                            if (srcPxG >= 0 && srcPxG < srcData.width && srcPyG >= 0 && srcPyG < srcData.height) {
-                                const srcIdxG = (srcPyG * srcData.width + srcPxG) * 4;
-                                g = srcData.data[srcIdxG + 1];
-                            }
-
-                            // Blue channel
-                            if (srcPxB >= 0 && srcPxB < srcData.width && srcPyB >= 0 && srcPyB < srcData.height) {
-                                const srcIdxB = (srcPyB * srcData.width + srcPxB) * 4;
-                                b = srcData.data[srcIdxB + 2];
-                            }
-
-                            // === EDGE LIGHTENING EFFECT ===
-                            // As pixels approach the edge, they get progressively lighter
-                            // This creates the defined cursor outline
-                            const lightenAmount = Math.pow(edgeProximity, 1.2) * maxLighten;
-
-                            // Apply lightening - blend toward white at edges
-                            r = Math.min(255, r + (255 - r) * lightenAmount);
-                            g = Math.min(255, g + (255 - g) * lightenAmount);
-                            b = Math.min(255, b + (255 - b) * lightenAmount);
-
-                            // Extra bright rim at the very edge (last 2-3 pixels)
-                            if (edgeDist < 3) {
-                                const rimIntensity = Math.pow(1 - (edgeDist / 3), 2);
-                                const rimBoost = rimIntensity * 0.5;
-                                r = Math.min(255, r + (255 - r) * rimBoost);
-                                g = Math.min(255, g + (255 - g) * rimBoost);
-                                b = Math.min(255, b + (255 - b) * rimBoost);
-
-                                // Subtle color tint on hover
-                                if (isHovering) {
-                                    r = Math.min(255, r * 0.9);
-                                    g = Math.min(255, g + 20 * rimIntensity);
-                                    b = Math.min(255, b + 40 * rimIntensity);
-                                }
-                            }
-
-                            // Store final pixel values
-                            outputData.data[outIdx] = Math.round(r);
-                            outputData.data[outIdx + 1] = Math.round(g);
-                            outputData.data[outIdx + 2] = Math.round(b);
-                            outputData.data[outIdx + 3] = 255;
-                        }
-                    }
-
-                    // Draw the distorted cursor
-                    ctx.putImageData(outputData, x1, y1);
-
-                    // Add subtle highlight on top edge
+                    // ========================================
+                    // LAYER 1: SOLID GLASS ARROW FILL
+                    // Creates the visible cursor shape
+                    // ========================================
                     ctx.save();
-                    ctx.beginPath();
-                    arrowPath.forEach((p, i) => {
-                        const px = cursorX + p.x * currentSize;
-                        const py = cursorY + p.y * currentSize;
-                        if (i === 0) ctx.moveTo(px, py);
-                        else ctx.lineTo(px, py);
-                    });
-                    ctx.closePath();
+                    drawArrowPath(cursorX, cursorY, size);
+
+                    // Glass fill - semi-transparent with subtle gradient
+                    const centerX = cursorX + size * 0.35;
+                    const centerY = cursorY + size * 0.45;
+                    const gradient = ctx.createRadialGradient(
+                        cursorX + size * 0.2, cursorY + size * 0.2, 0,
+                        centerX, centerY, size * 0.8
+                    );
+
+                    if (isHovering) {
+                        // Blue tinted glass on hover
+                        gradient.addColorStop(0, 'rgba(180, 210, 255, 0.45)');
+                        gradient.addColorStop(0.5, 'rgba(120, 160, 220, 0.35)');
+                        gradient.addColorStop(1, 'rgba(80, 120, 180, 0.25)');
+                    } else if (isClicking) {
+                        // Brighter on click
+                        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+                        gradient.addColorStop(0.5, 'rgba(220, 230, 255, 0.40)');
+                        gradient.addColorStop(1, 'rgba(180, 200, 240, 0.30)');
+                    } else {
+                        // Default: subtle white/gray glass
+                        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.40)');
+                        gradient.addColorStop(0.5, 'rgba(200, 210, 230, 0.30)');
+                        gradient.addColorStop(1, 'rgba(150, 170, 200, 0.20)');
+                    }
+
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    ctx.restore();
+
+                    // ========================================
+                    // LAYER 2: INNER DISTORTION EFFECT
+                    // Creates the warping/refraction look
+                    // ========================================
+                    ctx.save();
+                    drawArrowPath(cursorX, cursorY, size);
                     ctx.clip();
 
-                    // Top highlight
-                    const highlightGradient = ctx.createLinearGradient(cursorX, cursorY, cursorX, cursorY + currentSize * 0.3);
-                    highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
-                    highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                    ctx.fillStyle = highlightGradient;
-                    ctx.fillRect(cursorX, cursorY, currentSize, currentSize * 0.3);
+                    // Draw concentric distortion rings that simulate lens effect
+                    const rings = 8;
+                    for (let ring = rings; ring >= 1; ring--) {
+                        const ringRatio = ring / rings;
+                        const ringRadius = size * 0.6 * ringRatio;
 
+                        // Each ring has offset creating distortion illusion
+                        const offsetX = Math.sin(ringRatio * Math.PI) * refraction * size * 0.15;
+                        const offsetY = Math.cos(ringRatio * Math.PI) * refraction * size * 0.1;
+
+                        const ringGradient = ctx.createRadialGradient(
+                            centerX + offsetX, centerY + offsetY, 0,
+                            centerX, centerY, ringRadius
+                        );
+
+                        // Chromatic aberration - different colors at different distances
+                        const chromaOffset = (1 - ringRatio) * config.chromaticAberration;
+                        const r = Math.round(200 + 55 * ringRatio);
+                        const g = Math.round(210 + 45 * ringRatio);
+                        const b = Math.round(255);
+                        const alpha = 0.03 + 0.02 * (1 - ringRatio);
+
+                        ringGradient.addColorStop(0, `rgba(${r + chromaOffset * 10}, ${g}, ${b - chromaOffset * 10}, ${alpha})`);
+                        ringGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+                        ctx.fillStyle = ringGradient;
+                        ctx.fillRect(cursorX - size * 0.5, cursorY - size * 0.5, size * 2, size * 2);
+                    }
+                    ctx.restore();
+
+                    // ========================================
+                    // LAYER 3: EDGE DEFINITION
+                    // Bright white outline makes cursor visible
+                    // ========================================
+                    ctx.save();
+                    drawArrowPath(cursorX, cursorY, size);
+
+                    // Outer glow
+                    ctx.shadowColor = isHovering ? 'rgba(100, 180, 255, 0.6)' : 'rgba(255, 255, 255, 0.5)';
+                    ctx.shadowBlur = isHovering ? 8 : 4;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+
+                    // Main edge stroke - BRIGHT WHITE
+                    ctx.strokeStyle = isHovering ? 'rgba(180, 220, 255, 0.95)' : 'rgba(255, 255, 255, 0.9)';
+                    ctx.lineWidth = isHovering ? 2.5 : 2;
+                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // ========================================
+                    // LAYER 4: TOP HIGHLIGHT (glass reflection)
+                    // ========================================
+                    ctx.save();
+                    drawArrowPath(cursorX, cursorY, size);
+                    ctx.clip();
+
+                    const highlightGradient = ctx.createLinearGradient(
+                        cursorX, cursorY,
+                        cursorX + size * 0.3, cursorY + size * 0.5
+                    );
+                    highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+                    highlightGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.2)');
+                    highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+                    ctx.fillStyle = highlightGradient;
+                    ctx.fillRect(cursorX, cursorY, size * 0.4, size * 0.5);
+                    ctx.restore();
+
+                    // ========================================
+                    // LAYER 5: INNER EDGE GLOW
+                    // Subtle brightness at inner edge
+                    // ========================================
+                    ctx.save();
+                    drawArrowPath(cursorX, cursorY, size);
+                    ctx.clip();
+
+                    // Draw bright pixels near the edge
+                    const edgeWidth = 4;
+                    for (let py = 0; py < size * 1.2; py += 1) {
+                        for (let px = 0; px < size * 1.2; px += 1) {
+                            const screenX = cursorX + px - size * 0.1;
+                            const screenY = cursorY + py - size * 0.1;
+
+                            if (!isInsideArrow(screenX, screenY, cursorX, cursorY, size)) continue;
+
+                            const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, size);
+                            if (edgeDist < edgeWidth) {
+                                const intensity = Math.pow(1 - edgeDist / edgeWidth, 2);
+                                const alpha = intensity * 0.4;
+                                ctx.fillStyle = isHovering
+                                    ? `rgba(150, 200, 255, ${alpha})`
+                                    : `rgba(255, 255, 255, ${alpha})`;
+                                ctx.fillRect(screenX, screenY, 1, 1);
+                            }
+                        }
+                    }
                     ctx.restore();
 
                     requestAnimationFrame(render);
                 }
 
-                // Event listeners
+                // Mouse tracking
                 document.addEventListener('mousemove', (e) => {
                     mouseX = e.clientX;
                     mouseY = e.clientY;
+                    isVisible = true;
                 });
 
-                const interactiveSelectors = 'a, button, .service-card, .tier-card, .result-card, .nav-toggle, input, textarea, [role="button"]';
-                document.querySelectorAll(interactiveSelectors).forEach(el => {
+                document.addEventListener('mouseenter', () => isVisible = true);
+                document.addEventListener('mouseleave', () => isVisible = false);
+
+                // Hover detection
+                const interactiveSelectors = 'a, button, .service-card, .tier-card, .result-card, .nav-toggle, input, textarea, select, [role="button"], [onclick]';
+
+                function bindHoverEvents(el) {
+                    if (el.hasAttribute('data-cursor-bound')) return;
+                    el.setAttribute('data-cursor-bound', 'true');
                     el.addEventListener('mouseenter', () => isHovering = true);
                     el.addEventListener('mouseleave', () => isHovering = false);
-                });
+                }
 
+                document.querySelectorAll(interactiveSelectors).forEach(bindHoverEvents);
+
+                // Click states
                 document.addEventListener('mousedown', () => isClicking = true);
                 document.addEventListener('mouseup', () => isClicking = false);
 
-                // Start rendering
-                captureSnapshot();
-                render();
-
-                // Handle dynamic elements
+                // Watch for new elements
                 const observer = new MutationObserver(() => {
-                    document.querySelectorAll(interactiveSelectors).forEach(el => {
-                        if (!el.hasAttribute('data-cursor-bound')) {
-                            el.setAttribute('data-cursor-bound', 'true');
-                            el.addEventListener('mouseenter', () => isHovering = true);
-                            el.addEventListener('mouseleave', () => isHovering = false);
-                        }
-                    });
+                    document.querySelectorAll(interactiveSelectors).forEach(bindHoverEvents);
                 });
                 observer.observe(document.body, { childList: true, subtree: true });
+
+                // Start
+                render();
             })();
         }
 
