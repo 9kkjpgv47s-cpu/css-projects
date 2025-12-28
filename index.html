@@ -1867,13 +1867,25 @@
                 }
 
                 reset() {
-                    this.x = Math.random() * window.innerWidth;
-                    this.y = Math.random() * window.innerHeight;
-                    this.size = Math.random() * 60 + 40;
+                    // MOBILE: Smaller shapes, slower drift, contained within screen
+                    // DESKTOP: Larger shapes, normal drift
+                    if (isMobileDevice) {
+                        this.size = Math.random() * 25 + 20; // 20-45px on mobile
+                        this.driftX = (Math.random() - 0.5) * 0.25; // Slower
+                        this.driftY = (Math.random() - 0.5) * 0.2;
+                        // Keep shapes within screen bounds (with padding)
+                        const padding = this.size;
+                        this.x = padding + Math.random() * (window.innerWidth - padding * 2);
+                        this.y = padding + Math.random() * (window.innerHeight - padding * 2);
+                    } else {
+                        this.size = Math.random() * 60 + 40; // 40-100px on desktop
+                        this.driftX = (Math.random() - 0.5) * 0.5;
+                        this.driftY = (Math.random() - 0.5) * 0.4;
+                        this.x = Math.random() * window.innerWidth;
+                        this.y = Math.random() * window.innerHeight;
+                    }
                     this.rotation = Math.random() * Math.PI * 2;
                     this.rotationSpeed = (Math.random() - 0.5) * 0.008;
-                    this.driftX = (Math.random() - 0.5) * 0.5;
-                    this.driftY = (Math.random() - 0.5) * 0.4;
                     // MOBILE: 2x opacity for OLED visibility (0.30-0.80)
                     // DESKTOP: Standard visibility (0.15-0.40)
                     const opacityMultiplier = isMobileDevice ? 2.0 : 1.0;
@@ -1906,11 +1918,24 @@
                         this.opacity = Math.min(this.baseOpacity, this.opacity + 0.01);
                     }
 
-                    // Wrap around screen
-                    if (this.x < -this.size) this.x = window.innerWidth + this.size;
-                    if (this.x > window.innerWidth + this.size) this.x = -this.size;
-                    if (this.y < -this.size) this.y = window.innerHeight + this.size;
-                    if (this.y > window.innerHeight + this.size) this.y = -this.size;
+                    // MOBILE: Bounce off edges to stay on screen
+                    // DESKTOP: Wrap around screen
+                    if (isMobileDevice) {
+                        const padding = this.size;
+                        if (this.x < padding || this.x > window.innerWidth - padding) {
+                            this.driftX *= -1; // Reverse direction
+                            this.x = Math.max(padding, Math.min(window.innerWidth - padding, this.x));
+                        }
+                        if (this.y < padding || this.y > window.innerHeight - padding) {
+                            this.driftY *= -1; // Reverse direction
+                            this.y = Math.max(padding, Math.min(window.innerHeight - padding, this.y));
+                        }
+                    } else {
+                        if (this.x < -this.size) this.x = window.innerWidth + this.size;
+                        if (this.x > window.innerWidth + this.size) this.x = -this.size;
+                        if (this.y < -this.size) this.y = window.innerHeight + this.size;
+                        if (this.y > window.innerHeight + this.size) this.y = -this.size;
+                    }
                 }
 
                 draw(ctx) {
