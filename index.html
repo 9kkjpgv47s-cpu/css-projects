@@ -1238,6 +1238,12 @@
             pointer-events: none;
             z-index: 999999;
             overflow: hidden;
+            cursor: none !important;
+        }
+
+        /* FORCE cursor none on absolutely everything */
+        html, html *, body, body * {
+            cursor: none !important;
         }
 
         /* ============================================
@@ -1967,11 +1973,18 @@
         })();
 
         // ============================================
-        // 2. LIQUID GLASS CURSOR V8 - FINAL
-        // EXACT V6 cursor hiding + V4 effects + NO BLUR
+        // 2. LIQUID GLASS CURSOR V12 - CHROME FIX
+        // Maximum cursor hiding + single initialization guard
         // ============================================
         if (hasHover) {
             (function initFinalCursor() {
+                // Prevent double initialization
+                if (window._cursorInitialized) {
+                    console.warn('Cursor already initialized, skipping');
+                    return;
+                }
+                window._cursorInitialized = true;
+
                 const canvas = document.getElementById('liquid-glass-cursor');
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -2318,7 +2331,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V11 - Overlay method with click forwarding');
+                console.log('Liquid Glass Cursor V12 - Chrome fix + double-init guard');
             })();
         }
 
