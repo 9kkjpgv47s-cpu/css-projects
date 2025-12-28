@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.4 - FORCE UPDATE -->
+<!-- v2.5 - Prominent mobile shapes -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1874,7 +1874,7 @@
                     // MOBILE: Smaller shapes, slower drift, contained within screen
                     // DESKTOP: Larger shapes, normal drift
                     if (isMobileDevice) {
-                        this.size = Math.random() * 25 + 20; // 20-45px on mobile
+                        this.size = Math.random() * 40 + 35; // 35-75px on mobile (prominent)
                         this.driftX = (Math.random() - 0.5) * 0.25; // Slower
                         this.driftY = (Math.random() - 0.5) * 0.2;
                         // Keep shapes within screen bounds (with padding)
@@ -1890,10 +1890,11 @@
                     }
                     this.rotation = Math.random() * Math.PI * 2;
                     this.rotationSpeed = (Math.random() - 0.5) * 0.008;
-                    // MOBILE: 2x opacity for OLED visibility (0.30-0.80)
-                    // DESKTOP: Standard visibility (0.15-0.40)
-                    const opacityMultiplier = isMobileDevice ? 2.0 : 1.0;
-                    this.baseOpacity = (Math.random() * 0.25 + 0.15) * opacityMultiplier;
+                    // PHONE: 3x opacity for small screen visibility
+                    // TABLET/DESKTOP: Standard visibility
+                    const isPhone = window.innerWidth < 500;
+                    const opacityMultiplier = isPhone ? 3.0 : (isMobileDevice ? 2.0 : 1.0);
+                    this.baseOpacity = (Math.random() * 0.25 + 0.20) * opacityMultiplier;
                     this.opacity = this.baseOpacity;
                     this.type = Math.random() > 0.5 ? 'hexagon' : 'triangle';
                     this.pulsePhase = Math.random() * Math.PI * 2;
@@ -1961,15 +1962,16 @@
                     }
                     ctx.closePath();
 
-                    // Fill with visible opacity
-                    ctx.globalAlpha = this.opacity * pulse * 0.25;
+                    // Fill with visible opacity (higher on mobile)
+                    const fillMultiplier = isMobileDevice ? 0.5 : 0.25;
+                    ctx.globalAlpha = this.opacity * pulse * fillMultiplier;
                     ctx.fillStyle = this.color;
                     ctx.fill();
 
-                    // Stroke with thicker line
+                    // Stroke with thicker line (thicker on mobile)
                     ctx.globalAlpha = this.opacity * pulse;
                     ctx.strokeStyle = this.color;
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = isMobileDevice ? 3 : 2;
                     ctx.stroke();
 
                     ctx.restore();
@@ -1980,7 +1982,7 @@
                 resize();
                 updateProtectedZones();
                 shapes = [];
-                const count = isMobileDevice ? 12 : 25;
+                const count = isMobileDevice ? 20 : 25;
                 for (let i = 0; i < count; i++) {
                     shapes.push(new GeometricShape());
                 }
