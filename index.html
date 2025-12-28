@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v3.1 - Shapes bounce around when touched -->
+<!-- v3.2 - Remove burst animation, shapes only -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2650,23 +2650,19 @@
                 ], { duration: 300, fill: 'forwards' }).onfinish = () => flash.remove();
             }
 
-            // Desktop click
+            // Desktop click - interact with shapes only (no burst)
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('a, button, input')) {
-                    createBurst(e.clientX, e.clientY);
-                    // Interact with background shapes
                     if (window.interactWithShapes) {
                         window.interactWithShapes(e.clientX, e.clientY);
                     }
                 }
             });
 
-            // Mobile tap
+            // Mobile tap - interact with shapes only (no burst)
             document.addEventListener('touchend', (e) => {
                 if (e.changedTouches.length > 0 && !e.target.closest('a, button, input')) {
                     const touch = e.changedTouches[0];
-                    createBurst(touch.clientX, touch.clientY);
-                    // Interact with background shapes
                     if (window.interactWithShapes) {
                         window.interactWithShapes(touch.clientX, touch.clientY);
                     }
