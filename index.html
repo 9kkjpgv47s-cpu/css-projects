@@ -1204,74 +1204,29 @@
         }
 
         /* ============================================
-           LIQUID GLASS CURSOR - TRUE DISTORTION
+           LIQUID GLASS CURSOR - TRUE OPTICAL DISTORTION
+           Canvas-based real pixel warping
            ============================================ */
 
         @media (hover: hover) and (pointer: fine) {
             * { cursor: none !important; }
         }
 
-        /* SVG filter for liquid distortion - referenced by cursor */
+        #liquid-glass-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999999;
+        }
+
         .liquid-glass-filter {
             position: absolute;
             width: 0;
             height: 0;
-        }
-
-        #liquid-cursor {
-            position: fixed;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            z-index: 99999;
-        }
-
-        /* Crystal Clear Liquid Glass Cursor - NO BLUR, PURE DISTORTION */
-        #glass-cursor {
-            position: fixed;
-            width: 28px;
-            height: 42px;
-            pointer-events: none;
-            z-index: 99998;
-            /* Arrow shape */
-            clip-path: polygon(
-                0% 0%,
-                0% 100%,
-                22% 78%,
-                45% 100%,
-                58% 92%,
-                38% 68%,
-                100% 68%,
-                0% 0%
-            );
-            /* CRYSTAL CLEAR - no background, only distortion */
-            background: transparent;
-            /* SVG displacement filter ONLY - no blur */
-            backdrop-filter: url(#liquid-distortion);
-            -webkit-backdrop-filter: url(#liquid-distortion);
-            /* Smooth spring animation */
-            transition:
-                transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform-origin: top left;
-            display: none;
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-            #glass-cursor { display: block; }
-        }
-
-        /* Hover state - stronger distortion */
-        #glass-cursor.hovering {
-            transform: scale(1.15);
-            backdrop-filter: url(#liquid-distortion-hover);
-            -webkit-backdrop-filter: url(#liquid-distortion-hover);
-        }
-
-        /* Click state - intense distortion */
-        #glass-cursor.clicking {
-            transform: scale(0.88);
-            backdrop-filter: url(#liquid-distortion-click);
-            -webkit-backdrop-filter: url(#liquid-distortion-click);
+            overflow: hidden;
         }
 
         /* ============================================
@@ -1367,32 +1322,8 @@
     <!-- Geometric Background Canvas -->
     <canvas id="geometricBg"></canvas>
 
-    <!-- SVG Filters for Crystal Clear Liquid Distortion -->
-    <svg class="liquid-glass-filter" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <!-- Default: Strong magnetic-like distortion, crystal clear -->
-            <filter id="liquid-distortion" x="-100%" y="-100%" width="300%" height="300%">
-                <!-- Create spherical displacement map -->
-                <feImage xlink:href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23808080'/%3E%3Cstop offset='100%25' stop-color='%23ffffff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='50' fill='url(%23g)'/%3E%3C/svg%3E" result="dispMap" preserveAspectRatio="none"/>
-                <feDisplacementMap in="SourceGraphic" in2="dispMap" scale="25" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
-
-            <!-- Hover: Intense warping -->
-            <filter id="liquid-distortion-hover" x="-100%" y="-100%" width="300%" height="300%">
-                <feImage xlink:href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23606060'/%3E%3Cstop offset='100%25' stop-color='%23ffffff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='50' fill='url(%23g)'/%3E%3C/svg%3E" result="dispMap" preserveAspectRatio="none"/>
-                <feDisplacementMap in="SourceGraphic" in2="dispMap" scale="40" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
-
-            <!-- Click: Maximum distortion -->
-            <filter id="liquid-distortion-click" x="-100%" y="-100%" width="300%" height="300%">
-                <feImage xlink:href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23404040'/%3E%3Cstop offset='100%25' stop-color='%23ffffff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='50' fill='url(%23g)'/%3E%3C/svg%3E" result="dispMap" preserveAspectRatio="none"/>
-                <feDisplacementMap in="SourceGraphic" in2="dispMap" scale="55" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
-        </defs>
-    </svg>
-
-    <!-- Liquid Glass Cursor Element -->
-    <div id="glass-cursor"></div>
+    <!-- Liquid Glass Cursor - Canvas for true optical distortion -->
+    <canvas id="liquid-glass-cursor"></canvas>
 
     <!-- ============================================
          NAVIGATION
@@ -2022,98 +1953,382 @@
         })();
 
         // ============================================
-        // 2. LIQUID GLASS CURSOR - TRUE DISTORTION (Desktop Only)
+        // 2. LIQUID GLASS CURSOR - TRUE OPTICAL DISTORTION
+        // Real-time pixel warping like iOS liquid glass
         // ============================================
         if (hasHover) {
-            (function initLiquidCursor() {
-                const cursor = document.getElementById('glass-cursor');
-                if (!cursor) return;
+            (function initLiquidGlassCursor() {
+                const canvas = document.getElementById('liquid-glass-cursor');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-                let mouseX = -100, mouseY = -100;
-                let cursorX = -100, cursorY = -100;
-                let velocityX = 0, velocityY = 0;
+                // Cursor configuration
+                const config = {
+                    size: 36,                    // Base cursor size
+                    hoverSize: 48,              // Size when hovering
+                    clickSize: 30,              // Size when clicking
+                    distortionStrength: 0.45,   // How much to warp (0-1)
+                    hoverDistortion: 0.6,       // Distortion on hover
+                    clickDistortion: 0.75,      // Distortion on click
+                    refractiveIndex: 1.5,       // Glass refraction simulation
+                    springStiffness: 0.12,      // Movement spring
+                    springDamping: 0.72,        // Movement damping
+                    chromaticAberration: 2,     // RGB split amount
+                    edgeSharpness: 0.92         // How sharp the edge distortion is
+                };
+
+                // State
+                let mouseX = -200, mouseY = -200;
+                let cursorX = -200, cursorY = -200;
+                let velX = 0, velY = 0;
                 let isHovering = false;
                 let isClicking = false;
+                let pageSnapshot = null;
+                let lastSnapshotTime = 0;
+                const snapshotInterval = 50; // Update snapshot every 50ms
 
-                // Physics settings for fluid motion
-                const spring = 0.15;
-                const friction = 0.75;
+                // Arrow cursor polygon points (normalized 0-1, origin top-left)
+                const arrowPath = [
+                    { x: 0, y: 0 },
+                    { x: 0, y: 1 },
+                    { x: 0.22, y: 0.78 },
+                    { x: 0.45, y: 1 },
+                    { x: 0.58, y: 0.92 },
+                    { x: 0.38, y: 0.68 },
+                    { x: 1, y: 0.68 }
+                ];
 
-                // Track mouse with velocity for fluid feel
+                // Set up canvas
+                function setupCanvas() {
+                    const dpr = window.devicePixelRatio || 1;
+                    canvas.width = window.innerWidth * dpr;
+                    canvas.height = window.innerHeight * dpr;
+                    canvas.style.width = window.innerWidth + 'px';
+                    canvas.style.height = window.innerHeight + 'px';
+                    ctx.scale(dpr, dpr);
+                }
+                setupCanvas();
+                window.addEventListener('resize', setupCanvas);
+
+                // Capture page snapshot for distortion source
+                async function captureSnapshot() {
+                    const now = Date.now();
+                    if (now - lastSnapshotTime < snapshotInterval) return;
+                    lastSnapshotTime = now;
+
+                    try {
+                        // Create off-screen canvas from current view
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = window.innerWidth;
+                        tempCanvas.height = window.innerHeight;
+
+                        // Draw page elements (simplified - captures background)
+                        tempCtx.fillStyle = getComputedStyle(document.body).backgroundColor || '#1f1f2e';
+                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                        // Capture visible elements
+                        const elements = document.querySelectorAll('h1, h2, h3, p, a, button, .logo, .service-card, .tier-card, .result-card, nav, section');
+                        elements.forEach(el => {
+                            const rect = el.getBoundingClientRect();
+                            const style = getComputedStyle(el);
+                            const color = style.color || '#ffffff';
+                            const bgColor = style.backgroundColor;
+
+                            if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)') {
+                                tempCtx.fillStyle = bgColor;
+                                tempCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
+                            }
+
+                            // Draw text approximation
+                            tempCtx.fillStyle = color;
+                            tempCtx.font = style.font || '16px sans-serif';
+                            if (el.textContent && rect.width > 0) {
+                                tempCtx.fillText(el.textContent.substring(0, 50), rect.left, rect.top + rect.height / 2);
+                            }
+                        });
+
+                        pageSnapshot = tempCanvas;
+                    } catch (e) {
+                        // Fallback: use gradient
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = window.innerWidth;
+                        tempCanvas.height = window.innerHeight;
+                        const tempCtx = tempCanvas.getContext('2d');
+                        const gradient = tempCtx.createLinearGradient(0, 0, tempCanvas.width, tempCanvas.height);
+                        gradient.addColorStop(0, '#1f1f2e');
+                        gradient.addColorStop(0.5, '#2a2a3e');
+                        gradient.addColorStop(1, '#1f1f2e');
+                        tempCtx.fillStyle = gradient;
+                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        pageSnapshot = tempCanvas;
+                    }
+                }
+
+                // Spherical lens distortion function
+                function sphericalDistort(srcX, srcY, centerX, centerY, radius, strength, refractiveIndex) {
+                    const dx = srcX - centerX;
+                    const dy = srcY - centerY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance >= radius) {
+                        return { x: srcX, y: srcY, intensity: 0 };
+                    }
+
+                    // Normalized distance from center (0 at center, 1 at edge)
+                    const normalizedDist = distance / radius;
+
+                    // Spherical lens formula - simulates looking through a glass sphere
+                    // Uses sine-based distortion for realistic glass curvature
+                    const theta = Math.asin(normalizedDist * config.edgeSharpness);
+                    const refractedAngle = Math.asin(Math.sin(theta) / refractiveIndex);
+                    const distortionAmount = (theta - refractedAngle) * strength * radius;
+
+                    // Apply distortion radially outward (magnification at center)
+                    const angle = Math.atan2(dy, dx);
+                    const newDist = distance - distortionAmount * (1 - normalizedDist * normalizedDist);
+
+                    const newX = centerX + Math.cos(angle) * newDist;
+                    const newY = centerY + Math.sin(angle) * newDist;
+
+                    // Intensity for edge effects (stronger at edges)
+                    const intensity = Math.pow(normalizedDist, 0.5);
+
+                    return { x: newX, y: newY, intensity };
+                }
+
+                // Check if point is inside arrow polygon
+                function isInsideArrow(px, py, arrowX, arrowY, size) {
+                    // Convert to normalized coordinates
+                    const nx = (px - arrowX) / size;
+                    const ny = (py - arrowY) / size;
+
+                    if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return false;
+
+                    // Ray casting algorithm for polygon
+                    let inside = false;
+                    for (let i = 0, j = arrowPath.length - 1; i < arrowPath.length; j = i++) {
+                        const xi = arrowPath[i].x, yi = arrowPath[i].y;
+                        const xj = arrowPath[j].x, yj = arrowPath[j].y;
+
+                        if (((yi > ny) !== (yj > ny)) && (nx < (xj - xi) * (ny - yi) / (yj - yi) + xi)) {
+                            inside = !inside;
+                        }
+                    }
+                    return inside;
+                }
+
+                // Get distance to arrow edge for smooth falloff
+                function getEdgeDistance(px, py, arrowX, arrowY, size) {
+                    const nx = (px - arrowX) / size;
+                    const ny = (py - arrowY) / size;
+
+                    let minDist = Infinity;
+                    for (let i = 0; i < arrowPath.length; i++) {
+                        const j = (i + 1) % arrowPath.length;
+                        const x1 = arrowPath[i].x, y1 = arrowPath[i].y;
+                        const x2 = arrowPath[j].x, y2 = arrowPath[j].y;
+
+                        // Distance to line segment
+                        const A = nx - x1, B = ny - y1;
+                        const C = x2 - x1, D = y2 - y1;
+                        const dot = A * C + B * D;
+                        const lenSq = C * C + D * D;
+                        let t = lenSq !== 0 ? dot / lenSq : -1;
+                        t = Math.max(0, Math.min(1, t));
+
+                        const nearX = x1 + t * C;
+                        const nearY = y1 + t * D;
+                        const dist = Math.sqrt((nx - nearX) ** 2 + (ny - nearY) ** 2);
+                        minDist = Math.min(minDist, dist);
+                    }
+                    return minDist * size;
+                }
+
+                // Main render function
+                function render() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Spring physics for smooth cursor movement
+                    const dx = mouseX - cursorX;
+                    const dy = mouseY - cursorY;
+                    velX += dx * config.springStiffness;
+                    velY += dy * config.springStiffness;
+                    velX *= config.springDamping;
+                    velY *= config.springDamping;
+                    cursorX += velX;
+                    cursorY += velY;
+
+                    // Current cursor properties
+                    const currentSize = isClicking ? config.clickSize : (isHovering ? config.hoverSize : config.size);
+                    const currentDistortion = isClicking ? config.clickDistortion : (isHovering ? config.hoverDistortion : config.distortionStrength);
+                    const chromatic = isHovering ? config.chromaticAberration * 1.5 : config.chromaticAberration;
+
+                    // Define cursor bounds with padding for distortion
+                    const padding = currentSize * 0.5;
+                    const x1 = Math.floor(cursorX - padding);
+                    const y1 = Math.floor(cursorY - padding);
+                    const x2 = Math.ceil(cursorX + currentSize + padding);
+                    const y2 = Math.ceil(cursorY + currentSize + padding);
+                    const width = x2 - x1;
+                    const height = y2 - y1;
+
+                    if (width <= 0 || height <= 0 || cursorX < -100) {
+                        requestAnimationFrame(render);
+                        return;
+                    }
+
+                    // Capture snapshot periodically
+                    captureSnapshot();
+
+                    if (!pageSnapshot) {
+                        requestAnimationFrame(render);
+                        return;
+                    }
+
+                    // Create output image data
+                    const outputData = ctx.createImageData(width, height);
+                    const srcCtx = pageSnapshot.getContext('2d');
+
+                    // Get source image data from snapshot
+                    let srcData;
+                    try {
+                        srcData = srcCtx.getImageData(
+                            Math.max(0, x1),
+                            Math.max(0, y1),
+                            Math.min(width, pageSnapshot.width - x1),
+                            Math.min(height, pageSnapshot.height - y1)
+                        );
+                    } catch (e) {
+                        requestAnimationFrame(render);
+                        return;
+                    }
+
+                    // Calculate center of arrow for distortion
+                    const centerX = cursorX + currentSize * 0.3;
+                    const centerY = cursorY + currentSize * 0.5;
+                    const radius = currentSize * 0.7;
+
+                    // Process each pixel
+                    for (let py = 0; py < height; py++) {
+                        for (let px = 0; px < width; px++) {
+                            const screenX = x1 + px;
+                            const screenY = y1 + py;
+
+                            // Check if inside arrow shape
+                            if (!isInsideArrow(screenX, screenY, cursorX, cursorY, currentSize)) {
+                                continue; // Leave transparent
+                            }
+
+                            // Apply spherical distortion
+                            const distorted = sphericalDistort(
+                                screenX, screenY,
+                                centerX, centerY,
+                                radius,
+                                currentDistortion,
+                                config.refractiveIndex
+                            );
+
+                            // Chromatic aberration - split RGB slightly
+                            const aberrationScale = distorted.intensity * chromatic;
+
+                            // Sample source pixels with chromatic aberration
+                            const srcPxR = Math.round(distorted.x - aberrationScale - x1);
+                            const srcPyR = Math.round(distorted.y - y1);
+                            const srcPxG = Math.round(distorted.x - x1);
+                            const srcPyG = Math.round(distorted.y - y1);
+                            const srcPxB = Math.round(distorted.x + aberrationScale - x1);
+                            const srcPyB = Math.round(distorted.y - y1);
+
+                            // Get color channels with bounds checking
+                            const outIdx = (py * width + px) * 4;
+
+                            // Red channel
+                            if (srcPxR >= 0 && srcPxR < srcData.width && srcPyR >= 0 && srcPyR < srcData.height) {
+                                const srcIdxR = (srcPyR * srcData.width + srcPxR) * 4;
+                                outputData.data[outIdx] = srcData.data[srcIdxR];
+                            }
+
+                            // Green channel
+                            if (srcPxG >= 0 && srcPxG < srcData.width && srcPyG >= 0 && srcPyG < srcData.height) {
+                                const srcIdxG = (srcPyG * srcData.width + srcPxG) * 4;
+                                outputData.data[outIdx + 1] = srcData.data[srcIdxG + 1];
+                            }
+
+                            // Blue channel
+                            if (srcPxB >= 0 && srcPxB < srcData.width && srcPyB >= 0 && srcPyB < srcData.height) {
+                                const srcIdxB = (srcPyB * srcData.width + srcPxB) * 4;
+                                outputData.data[outIdx + 2] = srcData.data[srcIdxB + 2];
+                            }
+
+                            // Alpha - full opacity inside arrow
+                            outputData.data[outIdx + 3] = 255;
+
+                            // Edge glow effect
+                            const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, currentSize);
+                            if (edgeDist < 3) {
+                                const edgeIntensity = 1 - (edgeDist / 3);
+                                const glowColor = isHovering ? [0, 217, 255] : [255, 255, 255];
+                                outputData.data[outIdx] = Math.min(255, outputData.data[outIdx] + glowColor[0] * edgeIntensity * 0.3);
+                                outputData.data[outIdx + 1] = Math.min(255, outputData.data[outIdx + 1] + glowColor[1] * edgeIntensity * 0.3);
+                                outputData.data[outIdx + 2] = Math.min(255, outputData.data[outIdx + 2] + glowColor[2] * edgeIntensity * 0.3);
+                            }
+                        }
+                    }
+
+                    // Draw the distorted cursor
+                    ctx.putImageData(outputData, x1, y1);
+
+                    // Add subtle highlight on top edge
+                    ctx.save();
+                    ctx.beginPath();
+                    arrowPath.forEach((p, i) => {
+                        const px = cursorX + p.x * currentSize;
+                        const py = cursorY + p.y * currentSize;
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    });
+                    ctx.closePath();
+                    ctx.clip();
+
+                    // Top highlight
+                    const highlightGradient = ctx.createLinearGradient(cursorX, cursorY, cursorX, cursorY + currentSize * 0.3);
+                    highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+                    highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    ctx.fillStyle = highlightGradient;
+                    ctx.fillRect(cursorX, cursorY, currentSize, currentSize * 0.3);
+
+                    ctx.restore();
+
+                    requestAnimationFrame(render);
+                }
+
+                // Event listeners
                 document.addEventListener('mousemove', (e) => {
                     mouseX = e.clientX;
                     mouseY = e.clientY;
                 });
 
-                // Hover detection for interactive elements
                 const interactiveSelectors = 'a, button, .service-card, .tier-card, .result-card, .nav-toggle, input, textarea, [role="button"]';
-                const interactiveElements = document.querySelectorAll(interactiveSelectors);
-                interactiveElements.forEach(el => {
-                    el.addEventListener('mouseenter', () => {
-                        isHovering = true;
-                        cursor.classList.add('hovering');
-                    });
-                    el.addEventListener('mouseleave', () => {
-                        isHovering = false;
-                        cursor.classList.remove('hovering');
-                    });
+                document.querySelectorAll(interactiveSelectors).forEach(el => {
+                    el.addEventListener('mouseenter', () => isHovering = true);
+                    el.addEventListener('mouseleave', () => isHovering = false);
                 });
 
-                // Click detection with spring effect
-                document.addEventListener('mousedown', () => {
-                    isClicking = true;
-                    cursor.classList.add('clicking');
-                });
-                document.addEventListener('mouseup', () => {
-                    isClicking = false;
-                    cursor.classList.remove('clicking');
-                });
+                document.addEventListener('mousedown', () => isClicking = true);
+                document.addEventListener('mouseup', () => isClicking = false);
 
-                // Fluid cursor animation with spring physics
-                function animateCursor() {
-                    // Spring physics for smooth, fluid motion
-                    const dx = mouseX - cursorX;
-                    const dy = mouseY - cursorY;
+                // Start rendering
+                captureSnapshot();
+                render();
 
-                    velocityX += dx * spring;
-                    velocityY += dy * spring;
-                    velocityX *= friction;
-                    velocityY *= friction;
-
-                    cursorX += velocityX;
-                    cursorY += velocityY;
-
-                    // Apply position
-                    cursor.style.left = cursorX + 'px';
-                    cursor.style.top = cursorY + 'px';
-
-                    // Slight rotation based on velocity for liquid feel
-                    const rotation = Math.atan2(velocityY, velocityX) * 0.1;
-                    const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-                    const stretch = 1 + Math.min(speed * 0.01, 0.15);
-
-                    if (!isClicking && !isHovering) {
-                        cursor.style.transform = `scaleY(${stretch}) rotate(${rotation}rad)`;
-                    }
-
-                    requestAnimationFrame(animateCursor);
-                }
-
-                animateCursor();
-
-                // Mutation observer to handle dynamically added elements
+                // Handle dynamic elements
                 const observer = new MutationObserver(() => {
                     document.querySelectorAll(interactiveSelectors).forEach(el => {
                         if (!el.hasAttribute('data-cursor-bound')) {
                             el.setAttribute('data-cursor-bound', 'true');
-                            el.addEventListener('mouseenter', () => {
-                                isHovering = true;
-                                cursor.classList.add('hovering');
-                            });
-                            el.addEventListener('mouseleave', () => {
-                                isHovering = false;
-                                cursor.classList.remove('hovering');
-                            });
+                            el.addEventListener('mouseenter', () => isHovering = true);
+                            el.addEventListener('mouseleave', () => isHovering = false);
                         }
                     });
                 });
