@@ -1944,36 +1944,60 @@
         })();
 
         // ============================================
-        // 2. LIQUID GLASS CURSOR V7 - ULTIMATE EDITION
-        // Combines: V6 cursor hiding + V4 distortion + NO BLUR
-        // Crystal clear with edge-pull and chromatic aberration
+        // 2. LIQUID GLASS CURSOR V8 - FINAL
+        // EXACT V6 cursor hiding + V4 effects + NO BLUR
         // ============================================
         if (hasHover) {
-            (function initUltimateCursor() {
+            (function initFinalCursor() {
                 const canvas = document.getElementById('liquid-glass-cursor');
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
                 // ==========================================
-                // BULLETPROOF CURSOR HIDING (from V6)
+                // EXACT V6 CURSOR HIDING - ALL 4 METHODS
+                // This worked perfectly - DO NOT MODIFY
                 // ==========================================
-                const hideStyle = document.createElement('style');
-                hideStyle.textContent = `
+
+                // Method 1: Inject style element with FULL selectors
+                const cursorHideStyle = document.createElement('style');
+                cursorHideStyle.id = 'cursor-hide-style';
+                cursorHideStyle.textContent = `
                     html, html *, html *::before, html *::after,
                     body, body *, body *::before, body *::after {
                         cursor: none !important;
                     }
+                    a, a *, button, button *, input, textarea, select,
+                    [role="button"], [onclick], label, summary {
+                        cursor: none !important;
+                    }
                 `;
-                document.head.appendChild(hideStyle);
+                document.head.appendChild(cursorHideStyle);
+
+                // Method 2: Set inline style on html and body
                 document.documentElement.style.setProperty('cursor', 'none', 'important');
                 document.body.style.setProperty('cursor', 'none', 'important');
-                document.querySelectorAll('*').forEach(el => el.style.setProperty('cursor', 'none', 'important'));
-                new MutationObserver(m => m.forEach(mut => mut.addedNodes.forEach(n => {
-                    if (n.nodeType === 1) {
-                        n.style.setProperty('cursor', 'none', 'important');
-                        n.querySelectorAll && n.querySelectorAll('*').forEach(c => c.style.setProperty('cursor', 'none', 'important'));
-                    }
-                }))).observe(document.body, { childList: true, subtree: true });
+
+                // Method 3: Override cursor on ALL existing elements
+                document.querySelectorAll('*').forEach(el => {
+                    el.style.setProperty('cursor', 'none', 'important');
+                });
+
+                // Method 4: Watch for new elements and hide their cursors
+                const cursorObserver = new MutationObserver(mutations => {
+                    mutations.forEach(mutation => {
+                        mutation.addedNodes.forEach(node => {
+                            if (node.nodeType === 1) {
+                                node.style.setProperty('cursor', 'none', 'important');
+                                if (node.querySelectorAll) {
+                                    node.querySelectorAll('*').forEach(child => {
+                                        child.style.setProperty('cursor', 'none', 'important');
+                                    });
+                                }
+                            }
+                        });
+                    });
+                });
+                cursorObserver.observe(document.body, { childList: true, subtree: true });
 
                 // ==========================================
                 // CANVAS SETUP
@@ -2264,7 +2288,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V7 - Ultimate Edition initialized');
+                console.log('Liquid Glass Cursor V8 - FINAL (V6 hiding + V4 effects)');
             })();
         }
 
