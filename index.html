@@ -1774,9 +1774,8 @@
                     resultsCarousel.scrollToCard(0);
                     // Start tiers on Growth (middle)
                     tiersCarousel.scrollToCard(1);
-                    
-                    // Play hint animations staggered
-                    setTimeout(() => servicesCarousel.playHint(), 500);
+
+                    // Swipe hint animation removed - was causing unwanted jiggle on load
                 }
                 servicesCarousel.updateCarousel();
                 resultsCarousel.updateCarousel();
