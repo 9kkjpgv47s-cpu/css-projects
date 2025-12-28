@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v3.0 - Click/touch interacts with shapes -->
+<!-- v3.1 - Shapes bounce around when touched -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2034,8 +2034,8 @@
 
             // Expose shape interaction for click/touch events
             window.interactWithShapes = function(x, y) {
-                const interactionRadius = 150; // How far the interaction reaches
-                const pushStrength = 8; // How hard shapes get pushed
+                const interactionRadius = 200; // How far the interaction reaches
+                const boostStrength = 5; // Velocity boost multiplier
 
                 shapes.forEach(shape => {
                     const dx = shape.x - x;
@@ -2043,25 +2043,43 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance < interactionRadius && distance > 0) {
-                        // Push shape away from click point
-                        const force = (1 - distance / interactionRadius) * pushStrength;
+                        // Boost velocity away from click point (makes them bounce around)
+                        const force = (1 - distance / interactionRadius) * boostStrength;
                         const angle = Math.atan2(dy, dx);
-                        shape.x += Math.cos(angle) * force;
-                        shape.y += Math.sin(angle) * force;
 
-                        // Spin faster temporarily
-                        shape.rotationSpeed = (Math.random() - 0.5) * 0.05;
+                        // Add velocity boost to existing drift
+                        shape.driftX += Math.cos(angle) * force;
+                        shape.driftY += Math.sin(angle) * force;
+
+                        // Spin faster
+                        shape.rotationSpeed = (Math.random() - 0.5) * 0.08;
 
                         // Pulse brighter
-                        shape.opacity = Math.min(1, shape.baseOpacity * 2);
-
-                        // Reset rotation speed after a moment
-                        setTimeout(() => {
-                            shape.rotationSpeed = (Math.random() - 0.5) * 0.008;
-                        }, 500);
+                        shape.opacity = Math.min(1, shape.baseOpacity * 2.5);
                     }
                 });
             };
+
+            // Gradually slow down shapes (friction) - keeps them bouncing but eventually settles
+            setInterval(() => {
+                shapes.forEach(shape => {
+                    // Apply friction to return to normal drift speed
+                    const normalSpeed = 0.3;
+                    const friction = 0.98;
+
+                    if (Math.abs(shape.driftX) > normalSpeed) {
+                        shape.driftX *= friction;
+                    }
+                    if (Math.abs(shape.driftY) > normalSpeed) {
+                        shape.driftY *= friction;
+                    }
+
+                    // Gradually normalize rotation speed
+                    if (Math.abs(shape.rotationSpeed) > 0.01) {
+                        shape.rotationSpeed *= 0.98;
+                    }
+                });
+            }, 50);
         })();
 
         // ============================================
