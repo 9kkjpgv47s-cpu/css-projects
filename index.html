@@ -2043,16 +2043,13 @@
                 document.head.appendChild(cursorHideStyle);
 
                 // ==========================================
-                // CANVAS SETUP
+                // CANVAS SETUP - No DPR scaling to avoid offset bug
                 // ==========================================
-                const dpr = window.devicePixelRatio || 1;
                 function setupCanvas() {
-                    canvas.width = window.innerWidth * dpr;
-                    canvas.height = window.innerHeight * dpr;
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
                     canvas.style.width = window.innerWidth + 'px';
                     canvas.style.height = window.innerHeight + 'px';
-                    ctx.setTransform(1, 0, 0, 1, 0, 0);
-                    ctx.scale(dpr, dpr);
                 }
                 setupCanvas();
                 window.addEventListener('resize', setupCanvas);
@@ -2331,7 +2328,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V13 - All cursor:pointer declarations fixed');
+                console.log('Liquid Glass Cursor V14 - Fixed DPR offset causing dual cursor');
             })();
         }
 
