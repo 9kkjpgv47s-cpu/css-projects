@@ -2113,159 +2113,64 @@
                 }
 
                 // ==========================================
-                // TRUE DISTORTION ENGINE
-                // Method 6: Real-time color sampling + displacement
-                // This is the ONLY method that can achieve real distortion
+                // HYBRID DISTORTION ENGINE V20
+                // Combines real color sampling + synthetic bubble effects
+                // ALWAYS visible regardless of background uniformity
                 // ==========================================
 
-                // Color sampling grid
-                const GRID_SIZE = 12; // 12x12 = 144 sample points
-                const SAMPLE_RADIUS = 50; // How far to sample around cursor
-                let colorGrid = []; // 2D array of {r,g,b}
-                let lastSampleTime = 0;
-                const SAMPLE_INTERVAL = 16; // Sample every 16ms (60fps)
+                // Animation time
+                let animTime = 0;
 
-                // Parse CSS color string to RGB
-                function parseColor(colorStr) {
-                    if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') {
-                        return null;
-                    }
-                    const match = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                    if (match) {
-                        return { r: parseInt(match[1]), g: parseInt(match[2]), b: parseInt(match[3]) };
-                    }
-                    return null;
-                }
+                // Bubble distortion calculation
+                function bubbleDistort(normX, normY, strength) {
+                    // normX, normY are -1 to 1 from center
+                    const dist = Math.sqrt(normX * normX + normY * normY);
+                    if (dist < 0.001) return { dx: 0, dy: 0, factor: 0 };
 
-                // Sample colors from the actual page at grid points
-                function sampleColorGrid(cx, cy) {
-                    const now = performance.now();
-                    if (now - lastSampleTime < SAMPLE_INTERVAL) return;
-                    lastSampleTime = now;
+                    const angle = Math.atan2(normY, normX);
 
-                    // Hide cursor elements temporarily for accurate sampling
-                    canvas.style.visibility = 'hidden';
-                    const overlay = document.getElementById('cursor-hide-overlay');
-                    if (overlay) overlay.style.visibility = 'hidden';
+                    // All 4 distortion types combined:
+                    // 1. Magnification (center pulls in)
+                    const magnify = Math.pow(Math.max(0, 1 - dist), 2) * 0.5 * strength;
 
-                    colorGrid = [];
-                    const step = (SAMPLE_RADIUS * 2) / (GRID_SIZE - 1);
+                    // 2. Barrel/Fisheye (bulge out)
+                    const barrel = Math.pow(dist, 0.5) * 0.4 * strength;
 
-                    for (let gy = 0; gy < GRID_SIZE; gy++) {
-                        colorGrid[gy] = [];
-                        for (let gx = 0; gx < GRID_SIZE; gx++) {
-                            const sampleX = cx - SAMPLE_RADIUS + gx * step;
-                            const sampleY = cy - SAMPLE_RADIUS + gy * step;
-
-                            // Get elements at this point
-                            const elements = document.elementsFromPoint(sampleX, sampleY);
-                            let color = { r: 30, g: 30, b: 45 }; // Default dark bg
-
-                            for (const el of elements) {
-                                if (el.id === 'liquid-glass-cursor' || el.id === 'cursor-hide-overlay') continue;
-
-                                const style = getComputedStyle(el);
-
-                                // Try background color first
-                                const bgColor = parseColor(style.backgroundColor);
-                                if (bgColor) {
-                                    color = bgColor;
-                                    break;
-                                }
-
-                                // Try text color if no background
-                                const textColor = parseColor(style.color);
-                                if (textColor && el.textContent.trim()) {
-                                    color = textColor;
-                                    break;
-                                }
-                            }
-
-                            colorGrid[gy][gx] = color;
-                        }
-                    }
-
-                    // Restore visibility
-                    canvas.style.visibility = 'visible';
-                    if (overlay) overlay.style.visibility = 'visible';
-                }
-
-                // Bilinear interpolation to sample from color grid
-                function sampleGridBilinear(u, v) {
-                    // u, v are 0-1 normalized coordinates in grid
-                    const gx = u * (GRID_SIZE - 1);
-                    const gy = v * (GRID_SIZE - 1);
-
-                    const x0 = Math.floor(gx);
-                    const y0 = Math.floor(gy);
-                    const x1 = Math.min(x0 + 1, GRID_SIZE - 1);
-                    const y1 = Math.min(y0 + 1, GRID_SIZE - 1);
-
-                    const fx = gx - x0;
-                    const fy = gy - y0;
-
-                    if (!colorGrid[y0] || !colorGrid[y0][x0]) {
-                        return { r: 30, g: 30, b: 45 };
-                    }
-
-                    const c00 = colorGrid[y0][x0];
-                    const c10 = colorGrid[y0][x1] || c00;
-                    const c01 = colorGrid[y1] ? (colorGrid[y1][x0] || c00) : c00;
-                    const c11 = colorGrid[y1] ? (colorGrid[y1][x1] || c00) : c00;
-
-                    // Bilinear interpolation
-                    const r = c00.r * (1-fx) * (1-fy) + c10.r * fx * (1-fy) + c01.r * (1-fx) * fy + c11.r * fx * fy;
-                    const g = c00.g * (1-fx) * (1-fy) + c10.g * fx * (1-fy) + c01.g * (1-fx) * fy + c11.g * fx * fy;
-                    const b = c00.b * (1-fx) * (1-fy) + c10.b * fx * (1-fy) + c01.b * (1-fx) * fy + c11.b * fx * fy;
-
-                    return { r, g, b };
-                }
-
-                // Bubble distortion function
-                // Returns distorted UV coordinates
-                function bubbleDistort(u, v, centerU, centerV, strength) {
-                    const du = u - centerU;
-                    const dv = v - centerV;
-                    const dist = Math.sqrt(du * du + dv * dv);
-
-                    if (dist < 0.001) return { u, v, distortAmount: 0 };
-
-                    const maxDist = 0.5;
-                    const normDist = Math.min(dist / maxDist, 1);
-
-                    // Combined distortion effects:
-                    // 1. Magnification at center (pulls inward)
-                    const magnify = Math.pow(1 - normDist, 2) * 0.4;
-
-                    // 2. Barrel/fisheye (pushes outward)
-                    const barrel = Math.pow(normDist, 0.6) * 0.3;
-
-                    // 3. Edge pull (stretches toward edge)
-                    const edgePull = normDist * normDist * 0.5;
+                    // 3. Edge pull (stretch to edge)
+                    const edgePull = dist * dist * 0.6 * strength;
 
                     // 4. Refraction wave
-                    const refract = Math.sin(normDist * Math.PI * 2) * 0.15;
+                    const wave = Math.sin(dist * Math.PI * 2.5) * 0.2 * strength;
 
-                    // Combined radial displacement
-                    const totalDisplace = (-magnify + barrel + edgePull + refract) * strength;
+                    // Combined displacement
+                    const radialDisplace = (-magnify + barrel + edgePull + wave);
 
-                    // Apply displacement
-                    const angle = Math.atan2(dv, du);
-                    const newDist = dist * (1 + totalDisplace);
+                    // Tangential swirl for extra effect
+                    const swirl = Math.sin(dist * Math.PI) * 0.15 * strength;
 
                     return {
-                        u: centerU + Math.cos(angle) * newDist,
-                        v: centerV + Math.sin(angle) * newDist,
-                        distortAmount: Math.abs(totalDisplace)
+                        dx: Math.cos(angle + swirl) * radialDisplace - normX * radialDisplace,
+                        dy: Math.sin(angle + swirl) * radialDisplace - normY * radialDisplace,
+                        factor: Math.abs(radialDisplace) + Math.abs(swirl)
+                    };
+                }
+
+                // Thin film interference for iridescent rainbow
+                function thinFilm(angle, dist, time) {
+                    const phase = angle * 3 + dist * 8 + time * 0.003;
+                    return {
+                        r: Math.sin(phase) * 0.5 + 0.5,
+                        g: Math.sin(phase + 2.094) * 0.5 + 0.5,
+                        b: Math.sin(phase + 4.189) * 0.5 + 0.5
                     };
                 }
 
                 // ==========================================
-                // MAIN RENDER - TRUE DISTORTION
-                // Samples real colors and displaces them
+                // MAIN RENDER - ALWAYS VISIBLE DISTORTION
                 // ==========================================
                 function render() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    animTime = performance.now();
 
                     // Spring physics
                     velX += (mouseX - cursorX) * 0.15;
@@ -2280,24 +2185,22 @@
                         return;
                     }
 
-                    const size = isClicking ? 28 : (isHovering ? 42 : 34);
+                    const size = isClicking ? 28 : (isHovering ? 44 : 36);
                     const centerX = cursorX + size * 0.4;
                     const centerY = cursorY + size * 0.5;
+                    const radius = size * 0.55;
 
-                    // Sample color grid from actual page
-                    sampleColorGrid(centerX, centerY);
-
-                    // Distortion parameters
-                    const distortStrength = isClicking ? 1.8 : (isHovering ? 1.4 : 1.0);
+                    // Distortion intensity
+                    const intensity = isClicking ? 2.0 : (isHovering ? 1.5 : 1.0);
 
                     // Pixel buffer
-                    const pad = 8;
+                    const pad = 10;
                     const x1 = Math.floor(cursorX - pad);
                     const y1 = Math.floor(cursorY - pad);
                     const w = Math.ceil(size + pad * 2);
                     const h = Math.ceil(size + pad * 2);
 
-                    if (w <= 0 || h <= 0 || colorGrid.length === 0) {
+                    if (w <= 0 || h <= 0) {
                         requestAnimationFrame(render);
                         return;
                     }
@@ -2314,65 +2217,109 @@
 
                             const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, size);
 
-                            // Convert to 0-1 coordinates relative to sample area
-                            const u = (screenX - (centerX - SAMPLE_RADIUS)) / (SAMPLE_RADIUS * 2);
-                            const v = (screenY - (centerY - SAMPLE_RADIUS)) / (SAMPLE_RADIUS * 2);
+                            // Normalized position from center (-1 to 1)
+                            const normX = (screenX - centerX) / radius;
+                            const normY = (screenY - centerY) / radius;
+                            const dist = Math.sqrt(normX * normX + normY * normY);
+                            const angle = Math.atan2(normY, normX);
 
-                            // Apply distortion to get source coordinates
-                            const distorted = bubbleDistort(u, v, 0.5, 0.5, distortStrength);
+                            // Get distortion
+                            const distort = bubbleDistort(normX, normY, intensity);
 
-                            // Sample color from distorted position
-                            const sampledColor = sampleGridBilinear(
-                                Math.max(0, Math.min(1, distorted.u)),
-                                Math.max(0, Math.min(1, distorted.v))
-                            );
+                            // =====================================
+                            // SYNTHETIC DISTORTION VISUALIZATION
+                            // Creates visible pattern from distortion math
+                            // =====================================
 
-                            // Chromatic aberration - offset R and B channels
-                            const aberration = distorted.distortAmount * 0.08;
-                            const rOffset = bubbleDistort(u, v, 0.5, 0.5, distortStrength * 1.15);
-                            const bOffset = bubbleDistort(u, v, 0.5, 0.5, distortStrength * 0.85);
+                            // Base: gradient showing distortion direction
+                            const distortAngle = Math.atan2(distort.dy, distort.dx);
+                            const distortMag = Math.sqrt(distort.dx * distort.dx + distort.dy * distort.dy);
 
-                            const rSample = sampleGridBilinear(
-                                Math.max(0, Math.min(1, rOffset.u)),
-                                Math.max(0, Math.min(1, rOffset.v))
-                            );
-                            const bSample = sampleGridBilinear(
-                                Math.max(0, Math.min(1, bOffset.u)),
-                                Math.max(0, Math.min(1, bOffset.v))
-                            );
+                            // Color based on distortion direction (like a normal map)
+                            let r = 128 + distort.dx * 200;
+                            let g = 128 + distort.dy * 200;
+                            let b = 180 + distortMag * 150;
 
-                            // Blend chromatic channels
-                            let r = rSample.r * 0.7 + sampledColor.r * 0.3;
-                            let g = sampledColor.g;
-                            let b = bSample.b * 0.7 + sampledColor.b * 0.3;
+                            // =====================================
+                            // IRIDESCENT OVERLAY
+                            // Thin film interference rainbow
+                            // =====================================
+                            const iridescent = thinFilm(angle, dist, animTime);
+                            const iriStrength = 0.4 + distort.factor * 0.3;
 
-                            // Edge highlight - bubble rim effect
+                            r = r * (1 - iriStrength) + iridescent.r * 255 * iriStrength;
+                            g = g * (1 - iriStrength) + iridescent.g * 255 * iriStrength;
+                            b = b * (1 - iriStrength) + iridescent.b * 255 * iriStrength;
+
+                            // =====================================
+                            // CHROMATIC ABERRATION
+                            // R and B offset in opposite directions
+                            // =====================================
+                            const chromaStrength = distort.factor * 40;
+                            r += Math.cos(distortAngle) * chromaStrength;
+                            b -= Math.cos(distortAngle) * chromaStrength;
+
+                            // =====================================
+                            // DISTORTION RINGS
+                            // Visible concentric pattern showing lens effect
+                            // =====================================
+                            const rings = Math.sin(dist * 12 + distort.factor * 8) * 0.5 + 0.5;
+                            r += rings * 30;
+                            g += rings * 25;
+                            b += rings * 35;
+
+                            // =====================================
+                            // EDGE RIM - Bright refraction edge
+                            // =====================================
+                            if (edgeDist < 5) {
+                                const rimFactor = Math.pow(1 - edgeDist / 5, 1.5);
+                                // Rainbow rim
+                                r += Math.sin(angle * 2 + animTime * 0.002) * 60 * rimFactor;
+                                g += Math.sin(angle * 2 + 2.1 + animTime * 0.002) * 60 * rimFactor;
+                                b += Math.sin(angle * 2 + 4.2 + animTime * 0.002) * 60 * rimFactor;
+                                // Brighten
+                                r = r + (255 - r) * rimFactor * 0.6;
+                                g = g + (255 - g) * rimFactor * 0.6;
+                                b = b + (255 - b) * rimFactor * 0.7;
+                            }
+
+                            // =====================================
+                            // SPECULAR HIGHLIGHT
+                            // Light reflection spot
+                            // =====================================
+                            const lightX = -0.5, lightY = -0.6;
+                            const specDot = -(normX * lightX + normY * lightY);
+                            const specular = Math.pow(Math.max(0, specDot), 16) * (1 - dist * 0.5);
+                            r += specular * 200;
+                            g += specular * 200;
+                            b += specular * 220;
+
+                            // =====================================
+                            // ALPHA - Semi-transparent bubble
+                            // =====================================
+                            // Fresnel: edges more opaque
+                            const fresnel = 0.1 + Math.pow(dist, 2) * 0.6;
+                            let alpha = 80 + fresnel * 120;
+
+                            // Solid rim
                             if (edgeDist < 3) {
-                                const rimFactor = Math.pow(1 - edgeDist / 3, 1.5);
-                                r = r + (255 - r) * rimFactor * 0.7;
-                                g = g + (255 - g) * rimFactor * 0.7;
-                                b = b + (255 - b) * rimFactor * 0.8;
+                                alpha += (1 - edgeDist / 3) * 150;
                             }
 
-                            // Alpha - mostly opaque to show distortion, fade at edges
-                            let alpha = 230;
-                            if (edgeDist < 2) {
-                                // Solid rim
-                                alpha = 255;
-                            } else if (edgeDist > size * 0.3) {
-                                // Fade toward center for bubble effect
-                                alpha = 200;
-                            }
+                            // Specular adds opacity
+                            alpha += specular * 100;
 
-                            // Click effect
+                            // Click intensifies
                             if (isClicking) {
-                                r = Math.min(255, r * 1.1);
-                                g = Math.min(255, g * 1.1);
-                                b = Math.min(255, b * 1.05);
+                                r = Math.min(255, r * 1.2);
+                                g = Math.min(255, g * 1.15);
+                                b = Math.min(255, b * 1.1);
+                                alpha = Math.min(255, alpha * 1.3);
                             }
 
-                            // Hover effect - slight blue tint
+                            // Hover: blue shift
                             if (isHovering) {
+                                r *= 0.9;
                                 b = Math.min(255, b * 1.15);
                             }
 
@@ -2387,14 +2334,15 @@
                     ctx.putImageData(imgData, x1, y1);
 
                     // ========================================
-                    // CRISP OUTLINE
+                    // OUTLINE - Iridescent animated edge
                     // ========================================
                     ctx.save();
                     drawArrow(cursorX, cursorY, size);
+                    const hue = (animTime * 0.05) % 360;
                     ctx.strokeStyle = isHovering
-                        ? 'rgba(180, 220, 255, 0.95)'
-                        : 'rgba(255, 255, 255, 0.9)';
-                    ctx.lineWidth = 1.2;
+                        ? `hsla(${(hue + 180) % 360}, 80%, 85%, 0.95)`
+                        : `hsla(${hue}, 60%, 90%, 0.9)`;
+                    ctx.lineWidth = 1.5;
                     ctx.lineJoin = 'round';
                     ctx.lineCap = 'round';
                     ctx.stroke();
@@ -2405,8 +2353,26 @@
                     // ========================================
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(cursorX + 0.5, cursorY + 0.5, 1.2, 0, Math.PI * 2);
+                    ctx.arc(cursorX + 0.5, cursorY + 0.5, 1.5, 0, Math.PI * 2);
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                    ctx.fill();
+                    ctx.restore();
+
+                    // ========================================
+                    // SPECULAR HIGHLIGHT SPOT
+                    // ========================================
+                    ctx.save();
+                    const hlX = cursorX + size * 0.18;
+                    const hlY = cursorY + size * 0.12;
+                    // Outer glow
+                    ctx.beginPath();
+                    ctx.arc(hlX, hlY, size * 0.1, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.fill();
+                    // Inner bright
+                    ctx.beginPath();
+                    ctx.arc(hlX - 1, hlY - 1, size * 0.04, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                     ctx.fill();
                     ctx.restore();
 
@@ -2440,7 +2406,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V19 - TRUE DISTORTION: real-time color sampling + bubble displacement');
+                console.log('Liquid Glass Cursor V20 - HYBRID: synthetic distortion visualization + iridescent bubble');
             })();
         }
 
