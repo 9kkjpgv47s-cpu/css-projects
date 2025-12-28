@@ -3,21 +3,26 @@
 ## Project Info
 - **Repository:** `9kkjpgv47s-cpu/css-projects`
 - **Live Site:** `https://cssolutions.services`
-- **Cloudflare Pages URL:** `https://css-projects.pages.dev`
+- **Cloudflare Pages URL:** `https://cssolutions.pages.dev`
+- **Cloudflare Project Name:** `cssolutions` (NOT css-projects!)
 - **Project Type:** Static HTML/CSS/JS site
 
 ---
 
-## The Root Cause of Deployment Issues
+## CRITICAL: Project Name Mismatch Issue (December 28, 2025)
 
-### Problem
-The Cloudflare project `css-projects` was created as a **Worker** instead of a **Pages** project. This caused:
-1. Deployment commands to fail with "Workers-specific command in a Pages project" error
-2. Missing configuration errors
-3. Need for explicit deploy commands instead of auto-deployment
+### The Problem
+The GitHub repository is named `css-projects` but the Cloudflare Pages project is named `cssolutions`. This mismatch caused deployment failures for hours.
 
-### Solution
-A `wrangler.jsonc` file with `pages_build_output_dir` tells Cloudflare to treat it as a Pages project.
+### What Was Wrong
+1. `wrangler.jsonc` had `"name": "css-projects"` (wrong)
+2. Cloudflare deploy command used `--project-name=css-projects` (wrong)
+3. These referenced a project that doesn't exist
+
+### The Fix
+1. Changed `wrangler.jsonc` to `"name": "cssolutions"`
+2. Changed Cloudflare deploy command to `--project-name=cssolutions`
+3. Added `Cloudflare Pages: Edit` permission to API token
 
 ---
 
@@ -26,26 +31,26 @@ A `wrangler.jsonc` file with `pages_build_output_dir` tells Cloudflare to treat 
 ### wrangler.jsonc (in repo root)
 ```json
 {
-  "name": "css-projects",
+  "name": "cssolutions",
   "pages_build_output_dir": "./"
 }
 ```
 
-**IMPORTANT:** This file MUST exist in the repo for deployments to work correctly.
+**CRITICAL:** The `name` field MUST match your Cloudflare Pages project name exactly!
 
 ---
 
 ## Cloudflare Dashboard Settings
 
 ### Location
-Cloudflare Dashboard → Workers & Pages → css-projects → Settings → Builds & deployments
+Cloudflare Dashboard → Workers & Pages → **cssolutions** → Settings → Builds & deployments
 
-### Production Settings
+### Production Settings (CORRECT)
 | Field | Value |
 |-------|-------|
 | Build command | `exit 0` |
 | Build output directory | `/` |
-| Deploy command | `npx wrangler pages deploy ./ --project-name=css-projects` |
+| Deploy command | `npx wrangler pages deploy ./ --project-name=cssolutions` |
 
 ### Non-Production (Preview) Settings
 | Field | Value |
@@ -56,19 +61,69 @@ Cloudflare Dashboard → Workers & Pages → css-projects → Settings → Build
 
 ---
 
-## Common Errors and Fixes
+## December 28, 2025 - Full Troubleshooting Journey
 
-### Error: "It looks like you've run a Workers-specific command in a Pages project"
-**Cause:** Deploy command is `npx wrangler deploy` (Workers) instead of Pages command
-**Fix:** Change deploy command to `npx wrangler pages deploy ./ --project-name=css-projects`
+### Symptoms
+- Changes pushed to GitHub weren't appearing on `cssolutions.services`
+- `cssolutions.pages.dev` sometimes showed updates, custom domain didn't
+- Cloudflare builds were failing silently or doing nothing
 
-### Error: "Must specify a project name"
-**Cause:** Deploy command missing `--project-name` flag
-**Fix:** Add `--project-name=css-projects` to the deploy command
+### Investigation Steps Taken
 
-### Error: "Missing pages_build_output_dir field"
-**Cause:** `wrangler.jsonc` file is missing or has wrong format
-**Fix:** Create `wrangler.jsonc` in repo root with:
+#### Step 1: Verified Local Code
+```powershell
+cd C:\Users\domje\css-projects
+git status  # Clean, up to date
+git log --oneline -5  # Showed v2.2 commits
+```
+**Result:** Local code was correct (v2.2)
+
+#### Step 2: Verified GitHub
+Checked `https://raw.githubusercontent.com/9kkjpgv47s-cpu/css-projects/main/index.html`
+**Result:** GitHub had v2.2 correctly
+
+#### Step 3: Compared Live Sites
+- `cssolutions.pages.dev` - Had some updates
+- `cssolutions.services` - Serving OLD content
+- Different ETags confirmed different files being served
+
+**Result:** Custom domain zone has separate cache from Pages project
+
+#### Step 4: Checked Deploy Command
+Found the deploy command in Cloudflare was set to just `true` (does nothing!)
+
+#### Step 5: Discovered Project Name Mismatch
+- `wrangler.jsonc` said `"name": "css-projects"`
+- Cloudflare project is actually named `cssolutions`
+- Deploy command used `--project-name=css-projects`
+- This project doesn't exist!
+
+### What DIDN'T Work (Attempted Fixes That Failed)
+
+#### 1. Purging Cloudflare Cache
+- Used "Purge All" in Cloudflare dashboard
+- **Why it failed:** The problem wasn't caching - deployments weren't happening at all
+
+#### 2. Cache-Buster URLs
+- Added `?v=timestamp` to URLs
+- **Why it failed:** Only showed that Pages URL had updates but custom domain didn't
+
+#### 3. Browser Cache Clearing
+- Cleared phone browser history, used incognito
+- **Why it failed:** The server was literally serving old files
+
+#### 4. Setting Deploy Command to `npx wrangler deploy`
+- This is the WORKERS command, not Pages!
+- **Error:** "It looks like you've run a Workers-specific command in a Pages project"
+
+#### 5. Using Wrong Project Name
+- Deploy command: `npx wrangler pages deploy ./ --project-name=css-projects`
+- **Error:** "Project not found. The specified project name does not match any of your existing projects. [code: 8000007]"
+
+### What FINALLY Worked
+
+#### Fix 1: Correct the wrangler.jsonc
+Changed from:
 ```json
 {
   "name": "css-projects",
@@ -76,23 +131,72 @@ Cloudflare Dashboard → Workers & Pages → css-projects → Settings → Build
 }
 ```
 
-### Error: Deployment not updating / showing old content
-**Cause:** Changes not pushed to GitHub, or Cloudflare cache
-**Fix:**
-1. Verify changes are pushed: `git status` should show "working tree clean"
-2. Check git log: `git log --oneline -3` to see recent commits
-3. Manually trigger deployment in Cloudflare dashboard
-4. Clear browser cache or use incognito mode
+To:
+```json
+{
+  "name": "cssolutions",
+  "pages_build_output_dir": "./"
+}
+```
 
-### Error: "CLOUDFLARE_API_TOKEN environment variable" required
-**Cause:** Running wrangler deploy from Claude Code's shell (not logged in)
-**Fix:** Run the command in YOUR PowerShell terminal where you logged in via `npx wrangler login`, OR use the Cloudflare dashboard to trigger deployment
+#### Fix 2: Correct the Deploy Command
+Changed from:
+```
+npx wrangler pages deploy ./ --project-name=css-projects
+```
+
+To:
+```
+npx wrangler pages deploy ./ --project-name=cssolutions
+```
+
+#### Fix 3: API Token Permissions
+Added `Cloudflare Pages: Edit` permission to the API token in Cloudflare dashboard.
+
+**Build succeeded after all three fixes!**
 
 ---
 
-## Manual Deployment (from your terminal)
+## Common Errors and Fixes
 
-If auto-deployment fails, run this in PowerShell:
+### Error: "Project not found" [code: 8000007]
+**Cause:** `--project-name` doesn't match your actual Cloudflare Pages project
+**Fix:**
+1. Go to Cloudflare Dashboard → Workers & Pages
+2. Find the EXACT name of your project (it's `cssolutions`, not `css-projects`)
+3. Update both `wrangler.jsonc` and deploy command to use correct name
+
+### Error: "It looks like you've run a Workers-specific command in a Pages project"
+**Cause:** Using `npx wrangler deploy` (Workers) instead of Pages command
+**Fix:** Change to `npx wrangler pages deploy ./ --project-name=cssolutions`
+
+### Error: "Missing pages_build_output_dir field"
+**Cause:** `wrangler.jsonc` file is missing or malformed
+**Fix:** Create `wrangler.jsonc` in repo root with correct content (see above)
+
+### Error: Deployment not updating / showing old content
+**Cause:** Multiple possible causes - investigate in order:
+1. Check if builds are actually running (Cloudflare Dashboard → Deployments)
+2. Check if builds are succeeding or failing
+3. Check deploy command is correct
+4. Check project name matches
+5. Check API token has Pages permissions
+6. THEN try cache purge
+
+### Error: "CLOUDFLARE_API_TOKEN environment variable" required
+**Cause:** Running wrangler from Claude Code's shell (not logged in)
+**Fix:** Run in YOUR PowerShell where you logged in via `npx wrangler login`
+
+### Error: API token lacks permissions
+**Cause:** Token was created for Workers, not Pages
+**Fix:** In Cloudflare Dashboard → My Profile → API Tokens, edit the token and add:
+- `Cloudflare Pages: Edit` permission
+
+---
+
+## Manual Deployment (Emergency Fix)
+
+If auto-deployment fails, run this in YOUR PowerShell:
 ```powershell
 cd C:\Users\domje\css-projects
 npx wrangler pages deploy ./
@@ -100,43 +204,51 @@ npx wrangler pages deploy ./
 
 **Note:** You must be logged into wrangler first via `npx wrangler login`
 
+This bypasses Cloudflare's build system and deploys directly from your local files.
+
+---
+
+## Debugging Checklist
+
+When deployment breaks, check these IN ORDER:
+
+1. [ ] **Are builds running?** Check Cloudflare Dashboard → Deployments
+2. [ ] **Are builds succeeding?** Look for green checkmarks or red X
+3. [ ] **Is wrangler.jsonc correct?** Must have `"name": "cssolutions"`
+4. [ ] **Is deploy command correct?** Must be `npx wrangler pages deploy ./ --project-name=cssolutions`
+5. [ ] **Does API token have Pages permission?** Check token settings
+6. [ ] **Are changes pushed to GitHub?** Run `git status` - should be clean
+7. [ ] **Is the correct branch deploying?** Should be `main`
+8. [ ] **THEN try cache purge** Only after confirming deployment succeeded
+
+---
+
+## Key Differences: Workers vs Pages
+
+| Aspect | Workers | Pages |
+|--------|---------|-------|
+| Deploy command | `npx wrangler deploy` | `npx wrangler pages deploy ./` |
+| Config field | `main: "src/index.js"` | `pages_build_output_dir: "./"` |
+| Use case | Serverless functions | Static sites |
+| Project URL | `project.workers.dev` | `project.pages.dev` |
+
+**This project is PAGES, not Workers!**
+
 ---
 
 ## Project Structure
 
 ```
-css-projects/
-├── index.html          # Main website file
-├── wrangler.jsonc      # Cloudflare Pages config (REQUIRED)
-├── README.md           # Project readme
-├── .gitignore          # Git ignore file
-└── claude fixes/       # Troubleshooting documentation
+css-projects/                    # GitHub repo name
+├── index.html                   # Main website file (single file with CSS/JS)
+├── wrangler.jsonc               # Cloudflare config (name: "cssolutions")
+├── README.md                    # Project readme
+├── .gitignore                   # Git ignore file
+└── claude fixes/                # Troubleshooting documentation
     └── web-deployment-troubleshooting.md
 ```
 
----
-
-## Static Site vs Worker vs Pages
-
-| Type | Use Case | Needs wrangler.jsonc? | Deploy Command |
-|------|----------|----------------------|----------------|
-| Static Site on Pages | HTML/CSS/JS only | Yes (with `pages_build_output_dir`) | `npx wrangler pages deploy ./` |
-| Pages with Build | React, Next.js, etc. | Optional | Build command like `npm run build` |
-| Worker | Serverless functions | Yes (with `main`) | `npx wrangler deploy` |
-
-**This project is a Static Site on Pages** - no build step, just serves files directly.
-
----
-
-## Quick Fix Checklist
-
-If deployment breaks again:
-
-1. [ ] Check `wrangler.jsonc` exists in repo root
-2. [ ] Verify it contains `"pages_build_output_dir": "./"`
-3. [ ] Check Cloudflare deploy command is `npx wrangler pages deploy ./ --project-name=css-projects`
-4. [ ] Make sure changes are committed and pushed to GitHub
-5. [ ] Try manual deployment: `npx wrangler pages deploy ./` in your terminal
+**Important:** The GitHub repo is `css-projects` but the Cloudflare project is `cssolutions`. Don't confuse them!
 
 ---
 
@@ -152,22 +264,40 @@ git add -A
 # Commit with message
 git commit -m "Your message here"
 
-# Push to GitHub
+# Push to GitHub (triggers auto-deploy)
 git push
 
 # View recent commits
 git log --oneline -5
+
+# Check remote URL
+git remote -v
 ```
 
 ---
 
-## Contact/Resources
+## Useful URLs
 
-- Cloudflare Pages Docs: https://developers.cloudflare.com/pages/
-- Wrangler Docs: https://developers.cloudflare.com/workers/wrangler/
-- GitHub Repo: https://github.com/9kkjpgv47s-cpu/css-projects
+| Resource | URL |
+|----------|-----|
+| Live Site | https://cssolutions.services |
+| Pages URL | https://cssolutions.pages.dev |
+| GitHub Repo | https://github.com/9kkjpgv47s-cpu/css-projects |
+| Cloudflare Dashboard | https://dash.cloudflare.com |
+| Cloudflare Pages Docs | https://developers.cloudflare.com/pages/ |
+| Wrangler Docs | https://developers.cloudflare.com/workers/wrangler/ |
 
 ---
 
-*Last Updated: December 27, 2025*
-*Created after resolving Worker vs Pages deployment confusion*
+## Lessons Learned
+
+1. **Project names matter** - The Cloudflare project name must match exactly in wrangler.jsonc and deploy commands
+2. **Don't assume caching** - When deployments don't appear, check if deployments are actually happening first
+3. **Workers vs Pages** - Using the wrong command type causes confusing errors
+4. **Check the basics first** - Build logs in Cloudflare dashboard show exactly what's failing
+5. **API tokens need correct permissions** - Pages needs `Pages: Edit`, not just `Workers: Edit`
+
+---
+
+*Last Updated: December 28, 2025*
+*Updated after resolving project name mismatch and API token permissions issues*
