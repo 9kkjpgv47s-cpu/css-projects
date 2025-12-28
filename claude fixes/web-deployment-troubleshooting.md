@@ -289,6 +289,48 @@ git remote -v
 
 ---
 
+## THE REAL ROOT CAUSE (December 28, 2025 - Final Discovery)
+
+### The Ultimate Problem
+The custom domain `cssolutions.services` was attached to the **WRONG Cloudflare project**!
+
+- Custom domain was on: `css-projects` (a Worker)
+- Deployments were going to: `cssolutions` (the Pages project)
+
+This meant ALL deployments to the Pages project were invisible on the custom domain because the domain was looking at a completely different project!
+
+### How This Happened
+1. There were TWO projects with similar names: `css-projects` (Worker) and `cssolutions` (Pages)
+2. The custom domain got attached to the Worker instead of the Pages project
+3. Every deployment to Pages worked fine (`cssolutions.pages.dev` showed updates)
+4. But `cssolutions.services` never updated because it was pointing elsewhere
+
+### Symptoms That Should Have Been a Clue
+- `cssolutions.pages.dev` showed v2.4 ✅
+- `cssolutions.services` showed ancient content ❌
+- Cache purges had no effect (because we were purging the wrong thing)
+- `CF-Cache-Status: HIT` with `cfOrigin;dur=0` (never hitting origin)
+
+### The Fix
+1. **Removed** custom domain from `css-projects` Worker
+2. **Deleted** any DNS records in the zone
+3. **Re-added** custom domain to `cssolutions` Pages project
+4. Cloudflare auto-configured: `@ CNAME → cssolutions.pages.dev`
+
+### How to Verify Custom Domain is on Correct Project
+```
+Cloudflare Dashboard → Workers & Pages → [project name] → Custom domains tab
+```
+Make sure your domain is listed under the CORRECT project!
+
+### After the Fix
+| Header | Before | After |
+|--------|--------|-------|
+| CF-Cache-Status | HIT (stale) | DYNAMIC (fresh) |
+| cfOrigin;dur | 0 (never hit) | 146+ (hitting origin) |
+
+---
+
 ## Lessons Learned
 
 1. **Project names matter** - The Cloudflare project name must match exactly in wrangler.jsonc and deploy commands
@@ -296,8 +338,24 @@ git remote -v
 3. **Workers vs Pages** - Using the wrong command type causes confusing errors
 4. **Check the basics first** - Build logs in Cloudflare dashboard show exactly what's failing
 5. **API tokens need correct permissions** - Pages needs `Pages: Edit`, not just `Workers: Edit`
+6. **VERIFY CUSTOM DOMAIN ATTACHMENT** - If pages.dev works but custom domain doesn't, the domain might be attached to the WRONG project! Always verify in Workers & Pages → [project] → Custom domains
+7. **Multiple similar projects are dangerous** - Having `css-projects` and `cssolutions` caused confusion. Consider consolidating or using distinct names.
+
+---
+
+## Quick Diagnostic Checklist
+
+If custom domain shows old content but pages.dev shows new content:
+
+1. [ ] **Check which project the custom domain is attached to**
+   - Go to Workers & Pages → each project → Custom domains
+   - Verify domain is on the CORRECT project
+2. [ ] Check deploy command has correct `--project-name`
+3. [ ] Check `wrangler.jsonc` has correct `name`
+4. [ ] Check HTTP headers: `cfOrigin;dur=0` means origin is never contacted
+5. [ ] Try the full reset: remove domain, delete DNS, re-add through Pages
 
 ---
 
 *Last Updated: December 28, 2025*
-*Updated after resolving project name mismatch and API token permissions issues*
+*Updated after discovering custom domain was attached to wrong project (css-projects Worker vs cssolutions Pages)*
