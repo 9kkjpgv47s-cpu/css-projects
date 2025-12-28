@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.8 - Shapes faint behind text, not invisible -->
+<!-- v2.9 - Zone-based opacity: top/bottom visible, middle faint -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1918,11 +1918,22 @@
                     this.rotation += this.rotationSpeed;
                     this.pulsePhase += this.pulseSpeed;
 
-                    // Fade to almost invisible (not fully gone) when behind text
-                    const minOpacity = 0.08; // Still faintly visible behind text
-                    if (isInProtectedZone(this.x, this.y, this.size)) {
+                    // Zone-based opacity:
+                    // Top 20%: full opacity (shapes fade in/out normally)
+                    // Middle 60%: always faint/transparent
+                    // Bottom 20%: full opacity (shapes fade in/out normally)
+                    const screenY = this.y / window.innerHeight;
+                    const inMiddleZone = screenY > 0.20 && screenY < 0.80;
+                    const minOpacity = 0.08;
+
+                    if (inMiddleZone) {
+                        // Middle 60% - always very faint
+                        this.opacity = Math.max(minOpacity, this.opacity - 0.03);
+                    } else if (isInProtectedZone(this.x, this.y, this.size)) {
+                        // Top/bottom 20% but behind text - fade to faint
                         this.opacity = Math.max(minOpacity, this.opacity - 0.02);
                     } else {
+                        // Top/bottom 20% with no text - full opacity
                         this.opacity = Math.min(this.baseOpacity, this.opacity + 0.01);
                     }
 
