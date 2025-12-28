@@ -1204,103 +1204,145 @@
         }
 
         /* ============================================
-           LIQUID GLASS ARROW CURSOR
+           LIQUID GLASS CURSOR - TRUE DISTORTION
            ============================================ */
-
-        /* Liquid glass animations */
-        @keyframes liquidGlassPulse {
-            0%, 100% {
-                opacity: 0.9;
-                filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.3));
-            }
-            50% {
-                opacity: 1;
-                filter: drop-shadow(0 0 15px rgba(0, 217, 255, 0.5));
-            }
-        }
-
-        @keyframes liquidGlassShimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
 
         @media (hover: hover) and (pointer: fine) {
             * { cursor: none !important; }
         }
 
-        #glass-lens {
+        /* SVG filter for liquid distortion - referenced by cursor */
+        .liquid-glass-filter {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+
+        #liquid-cursor {
             position: fixed;
-            width: 24px;
-            height: 36px;
+            top: 0;
+            left: 0;
             pointer-events: none;
             z-index: 99999;
-            /* Arrow shape - classic pointer */
+        }
+
+        /* Fallback CSS cursor element */
+        #glass-cursor {
+            position: fixed;
+            width: 28px;
+            height: 42px;
+            pointer-events: none;
+            z-index: 99998;
+            /* Arrow shape */
             clip-path: polygon(
                 0% 0%,
                 0% 100%,
-                25% 75%,
-                50% 100%,
-                65% 90%,
-                45% 65%,
-                100% 65%,
+                22% 78%,
+                45% 100%,
+                58% 92%,
+                38% 68%,
+                100% 68%,
                 0% 0%
             );
-            /* Liquid glass effect */
+            /* Liquid glass distortion via SVG filter */
             background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.15) 0%,
-                rgba(255, 255, 255, 0.05) 50%,
-                rgba(255, 255, 255, 0.15) 100%
+                145deg,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.1) 30%,
+                rgba(255, 255, 255, 0.05) 60%,
+                rgba(255, 255, 255, 0.2) 100%
             );
-            background-size: 200% 200%;
-            backdrop-filter: blur(12px) saturate(180%) brightness(115%);
-            -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(115%);
-            /* Multi-layer glass shadows */
+            backdrop-filter: url(#liquid-distortion) blur(8px) brightness(1.15) saturate(1.4) contrast(1.1);
+            -webkit-backdrop-filter: url(#liquid-distortion) blur(8px) brightness(1.15) saturate(1.4) contrast(1.1);
+            /* 3D glass appearance */
             box-shadow:
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3),
-                0 4px 16px rgba(0, 0, 0, 0.15),
-                0 0 20px rgba(0, 217, 255, 0.1);
-            /* GPU acceleration */
-            transform: translateZ(0);
-            will-change: transform, backdrop-filter;
-            /* Smooth spring-like movement */
-            transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        box-shadow 0.2s ease,
-                        backdrop-filter 0.2s ease;
-            /* Subtle pulse animation */
-            animation: liquidGlassPulse 3s ease-in-out infinite;
+                /* Inner top highlight */
+                inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+                /* Inner bottom shadow */
+                inset -1px -1px 3px rgba(0, 0, 0, 0.1),
+                /* Outer glow */
+                0 4px 20px rgba(0, 0, 0, 0.15),
+                /* Subtle cyan ambient */
+                0 0 30px rgba(0, 217, 255, 0.08);
+            /* Smooth spring animation */
+            transition:
+                transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.2s ease,
+                clip-path 0.15s ease;
+            transform-origin: top left;
             display: none;
         }
 
         @media (hover: hover) and (pointer: fine) {
-            #glass-lens { display: block; }
+            #glass-cursor { display: block; }
         }
 
-        /* Hover state - enhanced glow */
-        #glass-lens.hovering {
-            backdrop-filter: blur(16px) saturate(200%) brightness(125%);
-            -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(125%);
-            box-shadow:
-                inset 0 0 0 1px rgba(0, 217, 255, 0.4),
-                inset 0 1px 2px rgba(255, 255, 255, 0.4),
-                0 4px 20px rgba(0, 217, 255, 0.25),
-                0 0 30px rgba(0, 217, 255, 0.2),
-                0 0 60px rgba(0, 217, 255, 0.1);
-            transform: translateZ(0) scale(1.08);
-            animation: liquidGlassShimmer 2s ease-in-out infinite, liquidGlassPulse 2s ease-in-out infinite;
+        /* Refraction highlight overlay */
+        #glass-cursor::before {
+            content: '';
+            position: absolute;
+            top: 5%;
+            left: 8%;
+            width: 25%;
+            height: 35%;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.7) 0%,
+                rgba(255, 255, 255, 0.3) 40%,
+                transparent 70%
+            );
+            border-radius: 50%;
+            filter: blur(1px);
         }
 
-        /* Click state - compressed spring */
-        #glass-lens.clicking {
-            transform: translateZ(0) scale(0.92);
-            backdrop-filter: blur(8px) saturate(220%) brightness(130%);
-            -webkit-backdrop-filter: blur(8px) saturate(220%) brightness(130%);
+        /* Secondary refraction */
+        #glass-cursor::after {
+            content: '';
+            position: absolute;
+            bottom: 25%;
+            right: 15%;
+            width: 15%;
+            height: 20%;
+            background: radial-gradient(
+                ellipse,
+                rgba(255, 255, 255, 0.4) 0%,
+                transparent 70%
+            );
+            filter: blur(0.5px);
+        }
+
+        /* Hover state - enhanced liquid effect */
+        #glass-cursor.hovering {
+            transform: scale(1.15);
             box-shadow:
-                inset 0 0 0 2px rgba(0, 217, 255, 0.6),
-                inset 0 2px 4px rgba(255, 255, 255, 0.5),
-                0 2px 10px rgba(0, 217, 255, 0.4),
+                inset 2px 2px 6px rgba(255, 255, 255, 0.5),
+                inset -1px -1px 4px rgba(0, 0, 0, 0.1),
+                0 6px 30px rgba(0, 217, 255, 0.25),
+                0 0 50px rgba(0, 217, 255, 0.15),
+                0 0 80px rgba(0, 217, 255, 0.08);
+            backdrop-filter: url(#liquid-distortion-hover) blur(12px) brightness(1.25) saturate(1.6) contrast(1.15);
+            -webkit-backdrop-filter: url(#liquid-distortion-hover) blur(12px) brightness(1.25) saturate(1.6) contrast(1.15);
+        }
+
+        #glass-cursor.hovering::before {
+            background: linear-gradient(
+                135deg,
+                rgba(0, 217, 255, 0.5) 0%,
+                rgba(255, 255, 255, 0.4) 30%,
+                transparent 60%
+            );
+        }
+
+        /* Click state - compressed spring with ripple */
+        #glass-cursor.clicking {
+            transform: scale(0.88);
+            box-shadow:
+                inset 3px 3px 8px rgba(255, 255, 255, 0.6),
+                inset -2px -2px 5px rgba(0, 0, 0, 0.15),
+                0 2px 15px rgba(0, 217, 255, 0.4),
                 0 0 40px rgba(0, 217, 255, 0.3);
+            backdrop-filter: url(#liquid-distortion-click) blur(6px) brightness(1.35) saturate(1.8) contrast(1.2);
+            -webkit-backdrop-filter: url(#liquid-distortion-click) blur(6px) brightness(1.35) saturate(1.8) contrast(1.2);
         }
 
         /* ============================================
@@ -1396,8 +1438,35 @@
     <!-- Geometric Background Canvas -->
     <canvas id="geometricBg"></canvas>
 
-    <!-- Elegant Glass Lens Cursor -->
-    <div id="glass-lens"></div>
+    <!-- SVG Filters for Liquid Glass Distortion -->
+    <svg class="liquid-glass-filter" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Default liquid distortion -->
+            <filter id="liquid-distortion" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" seed="1" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+            <!-- Hover state - more distortion -->
+            <filter id="liquid-distortion-hover" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="4" seed="2" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+            <!-- Click state - ripple effect -->
+            <filter id="liquid-distortion-click" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+            <!-- Spherical lens distortion -->
+            <filter id="spherical-lens" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur"/>
+                <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="1" result="turbulence"/>
+                <feDisplacementMap in="blur" in2="turbulence" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Liquid Glass Cursor Element -->
+    <div id="glass-cursor"></div>
 
     <!-- ============================================
          NAVIGATION
@@ -2027,42 +2096,102 @@
         })();
 
         // ============================================
-        // 2. ELEGANT GLASS LENS CURSOR (Desktop Only)
+        // 2. LIQUID GLASS CURSOR - TRUE DISTORTION (Desktop Only)
         // ============================================
         if (hasHover) {
-            (function initGlassLens() {
-                const lens = document.getElementById('glass-lens');
-                if (!lens) return;
+            (function initLiquidCursor() {
+                const cursor = document.getElementById('glass-cursor');
+                if (!cursor) return;
 
-                let mouseX = 0, mouseY = 0;
-                let lensX = 0, lensY = 0;
+                let mouseX = -100, mouseY = -100;
+                let cursorX = -100, cursorY = -100;
+                let velocityX = 0, velocityY = 0;
+                let isHovering = false;
+                let isClicking = false;
 
-                // Track mouse position
+                // Physics settings for fluid motion
+                const spring = 0.15;
+                const friction = 0.75;
+
+                // Track mouse with velocity for fluid feel
                 document.addEventListener('mousemove', (e) => {
                     mouseX = e.clientX;
                     mouseY = e.clientY;
                 });
 
-                // Smooth lens follow with lerp
-                function animateLens() {
-                    lensX += (mouseX - lensX) * 0.18;
-                    lensY += (mouseY - lensY) * 0.18;
-                    lens.style.left = lensX + 'px';
-                    lens.style.top = lensY + 'px';
-                    requestAnimationFrame(animateLens);
-                }
-                animateLens();
-
                 // Hover detection for interactive elements
-                const interactiveElements = document.querySelectorAll('a, button, .service-card, .tier-card, .result-card, .nav-toggle, input, textarea');
+                const interactiveSelectors = 'a, button, .service-card, .tier-card, .result-card, .nav-toggle, input, textarea, [role="button"]';
+                const interactiveElements = document.querySelectorAll(interactiveSelectors);
                 interactiveElements.forEach(el => {
-                    el.addEventListener('mouseenter', () => lens.classList.add('hovering'));
-                    el.addEventListener('mouseleave', () => lens.classList.remove('hovering'));
+                    el.addEventListener('mouseenter', () => {
+                        isHovering = true;
+                        cursor.classList.add('hovering');
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        isHovering = false;
+                        cursor.classList.remove('hovering');
+                    });
                 });
 
-                // Click effect
-                document.addEventListener('mousedown', () => lens.classList.add('clicking'));
-                document.addEventListener('mouseup', () => lens.classList.remove('clicking'));
+                // Click detection with spring effect
+                document.addEventListener('mousedown', () => {
+                    isClicking = true;
+                    cursor.classList.add('clicking');
+                });
+                document.addEventListener('mouseup', () => {
+                    isClicking = false;
+                    cursor.classList.remove('clicking');
+                });
+
+                // Fluid cursor animation with spring physics
+                function animateCursor() {
+                    // Spring physics for smooth, fluid motion
+                    const dx = mouseX - cursorX;
+                    const dy = mouseY - cursorY;
+
+                    velocityX += dx * spring;
+                    velocityY += dy * spring;
+                    velocityX *= friction;
+                    velocityY *= friction;
+
+                    cursorX += velocityX;
+                    cursorY += velocityY;
+
+                    // Apply position
+                    cursor.style.left = cursorX + 'px';
+                    cursor.style.top = cursorY + 'px';
+
+                    // Slight rotation based on velocity for liquid feel
+                    const rotation = Math.atan2(velocityY, velocityX) * 0.1;
+                    const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+                    const stretch = 1 + Math.min(speed * 0.01, 0.15);
+
+                    if (!isClicking && !isHovering) {
+                        cursor.style.transform = `scaleY(${stretch}) rotate(${rotation}rad)`;
+                    }
+
+                    requestAnimationFrame(animateCursor);
+                }
+
+                animateCursor();
+
+                // Mutation observer to handle dynamically added elements
+                const observer = new MutationObserver(() => {
+                    document.querySelectorAll(interactiveSelectors).forEach(el => {
+                        if (!el.hasAttribute('data-cursor-bound')) {
+                            el.setAttribute('data-cursor-bound', 'true');
+                            el.addEventListener('mouseenter', () => {
+                                isHovering = true;
+                                cursor.classList.add('hovering');
+                            });
+                            el.addEventListener('mouseleave', () => {
+                                isHovering = false;
+                                cursor.classList.remove('hovering');
+                            });
+                        }
+                    });
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
             })();
         }
 
