@@ -2113,39 +2113,76 @@
                 }
 
                 // ==========================================
-                // DISTORTION CALCULATION
-                // Combined: magnify + fisheye + edge-pull + refraction
+                // BUBBLE PHYSICS - THIN FILM INTERFERENCE
+                // Models soap bubble optical properties
                 // ==========================================
-                function getDistortion(x, y, cx, cy, radius) {
-                    const dx = x - cx, dy = y - cy;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 0.001) return { offsetX: 0, offsetY: 0, strength: 0 };
 
-                    const norm = dist / radius;
-                    const angle = Math.atan2(dy, dx);
+                // Attempt to grab background for real distortion
+                let bgCanvas = null;
+                let bgCtx = null;
+                let lastBgCapture = 0;
 
-                    // Combine all 4 distortion types
-                    const magnify = Math.pow(Math.max(0, 1 - norm), 2) * 8;
-                    const fisheye = Math.pow(Math.min(norm, 1), 0.6) * 6;
-                    const edgePull = norm * norm * 10;
-                    const refract = Math.sin(norm * Math.PI * 2) * 4;
+                function captureBg() {
+                    // Throttle captures
+                    const now = Date.now();
+                    if (now - lastBgCapture < 50) return;
+                    lastBgCapture = now;
 
-                    const totalRadial = -magnify + fisheye + edgePull;
-                    const totalTangent = refract;
+                    if (!bgCanvas) {
+                        bgCanvas = document.createElement('canvas');
+                        bgCtx = bgCanvas.getContext('2d', { willReadFrequently: true });
+                    }
+                    bgCanvas.width = 80;
+                    bgCanvas.height = 80;
 
-                    return {
-                        offsetX: Math.cos(angle) * totalRadial - Math.sin(angle) * totalTangent,
-                        offsetY: Math.sin(angle) * totalRadial + Math.cos(angle) * totalTangent,
-                        strength: Math.abs(totalRadial) + Math.abs(totalTangent)
-                    };
+                    // Try to sample nearby colors from computed styles
+                    // This gives us approximate colors to distort
+                    const elements = document.elementsFromPoint(cursorX + 20, cursorY + 20);
+                    let sampleColors = [];
+                    for (let el of elements.slice(0, 3)) {
+                        if (el.id === 'liquid-glass-cursor' || el.id === 'cursor-hide-overlay') continue;
+                        const style = getComputedStyle(el);
+                        const bg = style.backgroundColor;
+                        const color = style.color;
+                        if (bg && bg !== 'rgba(0, 0, 0, 0)') sampleColors.push(bg);
+                        if (color) sampleColors.push(color);
+                    }
+                    return sampleColors;
                 }
 
+                // Convert angle to rainbow color (thin film interference)
+                function thinFilmColor(angle, thickness, time) {
+                    // Soap bubble interference creates rainbow based on film thickness
+                    // Thickness varies = different colors
+                    const phase = angle * 2 + thickness * 12 + time * 0.002;
+
+                    // Interference pattern - wavelength-dependent
+                    const r = Math.sin(phase) * 0.5 + 0.5;
+                    const g = Math.sin(phase + 2.094) * 0.5 + 0.5; // 120 degrees
+                    const b = Math.sin(phase + 4.188) * 0.5 + 0.5; // 240 degrees
+
+                    return { r: r * 255, g: g * 255, b: b * 255 };
+                }
+
+                // Bubble surface normal and fresnel
+                function bubbleFresnel(fromCenter) {
+                    // Fresnel effect: edges reflect more, center is transparent
+                    // Using Schlick's approximation
+                    const cosTheta = Math.sqrt(1 - fromCenter * fromCenter);
+                    const f0 = 0.04; // Glass/water IOR
+                    return f0 + (1 - f0) * Math.pow(1 - cosTheta, 5);
+                }
+
+                // Time for animation
+                let bubbleTime = 0;
+
                 // ==========================================
-                // MAIN RENDER - VISIBLE GLASS DISTORTION
-                // Subtle tint makes distortion visible
+                // MAIN RENDER - BUBBLE EFFECT
+                // Iridescent, flowing, almost invisible center
                 // ==========================================
                 function render() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    bubbleTime = Date.now();
 
                     // Spring physics
                     velX += (mouseX - cursorX) * 0.15;
@@ -2160,13 +2197,15 @@
                         return;
                     }
 
-                    const size = isClicking ? 28 : (isHovering ? 40 : 32);
+                    const size = isClicking ? 28 : (isHovering ? 42 : 34);
                     const centerX = cursorX + size * 0.4;
                     const centerY = cursorY + size * 0.5;
-                    const radius = size * 0.8;
+
+                    // Sample background colors
+                    const bgColors = captureBg() || [];
 
                     // Pixel buffer
-                    const pad = 8;
+                    const pad = 10;
                     const x1 = Math.floor(cursorX - pad);
                     const y1 = Math.floor(cursorY - pad);
                     const w = Math.ceil(size + pad * 2);
@@ -2180,7 +2219,9 @@
                     const imgData = ctx.createImageData(w, h);
                     const pixels = imgData.data;
 
-                    // Process each pixel
+                    // Light source direction (top-left)
+                    const lightX = -0.6, lightY = -0.8;
+
                     for (let py = 0; py < h; py++) {
                         for (let px = 0; px < w; px++) {
                             const screenX = x1 + px;
@@ -2189,78 +2230,110 @@
                             if (!isInsideArrow(screenX, screenY, cursorX, cursorY, size)) continue;
 
                             const edgeDist = getEdgeDistance(screenX, screenY, cursorX, cursorY, size);
-                            const distort = getDistortion(screenX, screenY, centerX, centerY, radius);
 
-                            // Normalized positions
-                            const fromCenter = Math.sqrt((screenX - centerX) ** 2 + (screenY - centerY) ** 2) / radius;
-                            const angle = Math.atan2(screenY - centerY, screenX - centerX);
-
-                            // =====================================
-                            // RGB CHROMATIC ABERRATION
-                            // Separate R, G, B based on distortion
-                            // =====================================
-                            const rgbSplit = distort.strength * 0.15;
-
-                            // Each channel gets different angle offset
-                            const rAngle = angle + rgbSplit * 0.5;
-                            const gAngle = angle;
-                            const bAngle = angle - rgbSplit * 0.4;
-
-                            // Color based on distorted angle
-                            let r = 200 + 55 * Math.cos(rAngle * 3 + distort.offsetX * 0.2);
-                            let g = 210 + 45 * Math.cos(gAngle * 3 + distort.offsetY * 0.15);
-                            let b = 230 + 25 * Math.cos(bAngle * 3 - distort.offsetX * 0.18);
-
-                            // Add distortion-based color variation
-                            r += distort.offsetX * 3;
-                            g += (distort.offsetX + distort.offsetY) * 1.5;
-                            b += distort.offsetY * 4;
+                            // Normalized position from center
+                            const dx = screenX - centerX;
+                            const dy = screenY - centerY;
+                            const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+                            const maxDist = size * 0.6;
+                            const fromCenter = Math.min(distFromCenter / maxDist, 1);
+                            const angle = Math.atan2(dy, dx);
 
                             // =====================================
-                            // EDGE EFFECTS - Brighter rim with prismatic colors
+                            // THIN FILM INTERFERENCE - BUBBLE RAINBOW
+                            // Film thickness varies across surface
                             // =====================================
+                            // Thickness increases toward edges (gravity pulls soap down)
+                            const filmThickness = fromCenter * 0.8 + Math.sin(angle * 3 + bubbleTime * 0.001) * 0.1;
+
+                            // Get interference color
+                            const iridescent = thinFilmColor(angle, filmThickness, bubbleTime);
+
+                            // =====================================
+                            // FRESNEL EFFECT - EDGE REFLECTION
+                            // Center transparent, edges reflective
+                            // =====================================
+                            const fresnel = bubbleFresnel(fromCenter);
+
+                            // =====================================
+                            // SPECULAR HIGHLIGHT - Light reflection
+                            // Bright spot from light source
+                            // =====================================
+                            const nx = dx / Math.max(distFromCenter, 1);
+                            const ny = dy / Math.max(distFromCenter, 1);
+                            // Surface normal on bubble curves outward
+                            const nz = Math.sqrt(Math.max(0, 1 - fromCenter * fromCenter));
+                            // Reflection of light
+                            const ldotn = -(lightX * nx + lightY * ny + 0.5 * nz);
+                            const specular = Math.pow(Math.max(0, ldotn), 32) * 2;
+
+                            // =====================================
+                            // DISTORTION - Bubble lens effect
+                            // Light bends through curved surface
+                            // =====================================
+                            const bendStrength = (1 - fromCenter) * 8;
+                            const distortX = nx * bendStrength;
+                            const distortY = ny * bendStrength;
+
+                            // =====================================
+                            // COMBINE COLORS
+                            // =====================================
+                            // Base: iridescent interference colors
+                            let r = iridescent.r;
+                            let g = iridescent.g;
+                            let b = iridescent.b;
+
+                            // Add distortion-based color shift
+                            r += distortX * 15;
+                            g += (distortX + distortY) * 8;
+                            b += distortY * 18;
+
+                            // Specular highlight (white)
+                            r += specular * 255;
+                            g += specular * 255;
+                            b += specular * 255;
+
+                            // Edge rim - brighter and more saturated
                             if (edgeDist < 4) {
-                                const rimFactor = 1 - edgeDist / 4;
-                                // Prismatic edge - rainbow based on angle
-                                r += Math.sin(angle * 2) * 30 * rimFactor;
-                                g += Math.sin(angle * 2 + 2.1) * 30 * rimFactor;
-                                b += Math.sin(angle * 2 + 4.2) * 30 * rimFactor;
-                                // Brighten rim
-                                r = r + (255 - r) * rimFactor * 0.6;
-                                g = g + (255 - g) * rimFactor * 0.6;
-                                b = b + (255 - b) * rimFactor * 0.7;
+                                const rimFactor = Math.pow(1 - edgeDist / 4, 1.5);
+                                // Intensify iridescence at rim
+                                r = r * (1 + rimFactor * 0.8);
+                                g = g * (1 + rimFactor * 0.8);
+                                b = b * (1 + rimFactor * 0.8);
                             }
 
                             // =====================================
-                            // ALPHA - Glass-like with visible distortion
-                            // Not fully transparent - needs some opacity to show effect
+                            // ALPHA - Bubble transparency
+                            // Center nearly invisible, edges visible via fresnel
                             // =====================================
-                            // Base alpha: more at edges, less at center
-                            let alpha = 25 + (1 - fromCenter) * 15; // Very subtle base (25-40)
+                            // Very transparent center
+                            let alpha = fresnel * 180; // Fresnel controls visibility
 
-                            // More opacity where distortion is strong
-                            alpha += distort.strength * 2;
-
-                            // Solid rim
-                            if (edgeDist < 3) {
-                                alpha += (1 - edgeDist / 3) * 180;
-                            } else if (edgeDist < 6) {
-                                alpha += (1 - (edgeDist - 3) / 3) * 60;
+                            // Solid at very edge (surface tension)
+                            if (edgeDist < 2.5) {
+                                const edgeSolid = Math.pow(1 - edgeDist / 2.5, 1.2);
+                                alpha += edgeSolid * 200;
+                            } else if (edgeDist < 5) {
+                                const edgeFade = 1 - (edgeDist - 2.5) / 2.5;
+                                alpha += edgeFade * 80;
                             }
 
-                            // Click: more visible
+                            // Specular adds opacity
+                            alpha += specular * 150;
+
+                            // Click: bubble compresses, more visible
                             if (isClicking) {
-                                r = Math.min(255, r * 1.15);
-                                g = Math.min(255, g * 1.1);
-                                b = Math.min(255, b * 1.05);
-                                alpha = Math.min(255, alpha * 1.4);
+                                alpha = Math.min(255, alpha * 1.5);
+                                r = Math.min(255, r * 1.2);
+                                g = Math.min(255, g * 1.15);
+                                b = Math.min(255, b * 1.1);
                             }
 
-                            // Hover: blue tint
+                            // Hover: cool blue shift
                             if (isHovering) {
-                                r *= 0.92;
-                                b = Math.min(255, b * 1.1);
-                                alpha = Math.min(255, alpha * 1.2);
+                                r *= 0.85;
+                                b = Math.min(255, b * 1.2);
+                                alpha = Math.min(255, alpha * 1.15);
                             }
 
                             const idx = (py * w + px) * 4;
@@ -2274,25 +2347,46 @@
                     ctx.putImageData(imgData, x1, y1);
 
                     // ========================================
-                    // CRISP OUTLINE
+                    // BUBBLE OUTLINE - Subtle iridescent edge
                     // ========================================
                     ctx.save();
                     drawArrow(cursorX, cursorY, size);
+
+                    // Gradient stroke for iridescent edge
+                    const edgeHue = (bubbleTime * 0.05) % 360;
                     ctx.strokeStyle = isHovering
-                        ? 'rgba(180, 220, 255, 1)'
-                        : 'rgba(255, 255, 255, 0.95)';
-                    ctx.lineWidth = 1.2;
-                    ctx.lineJoin = 'miter';
-                    ctx.lineCap = 'square';
+                        ? `hsla(${(edgeHue + 200) % 360}, 70%, 80%, 0.9)`
+                        : `hsla(${edgeHue}, 50%, 85%, 0.85)`;
+                    ctx.lineWidth = 1.5;
+                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
                     ctx.stroke();
                     ctx.restore();
 
                     // ========================================
-                    // TIP DOT
+                    // TIP DOT - Bright focus point
                     // ========================================
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(cursorX + 0.5, cursorY + 0.5, 1.2, 0, Math.PI * 2);
+                    ctx.arc(cursorX + 0.5, cursorY + 0.5, 1.5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                    ctx.fill();
+                    ctx.restore();
+
+                    // ========================================
+                    // SPECULAR HIGHLIGHT SPOT
+                    // Small bright reflection like on a bubble
+                    // ========================================
+                    ctx.save();
+                    ctx.beginPath();
+                    const highlightX = cursorX + size * 0.2;
+                    const highlightY = cursorY + size * 0.15;
+                    ctx.arc(highlightX, highlightY, size * 0.08, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.fill();
+                    // Smaller brighter core
+                    ctx.beginPath();
+                    ctx.arc(highlightX - 1, highlightY - 1, size * 0.03, 0, Math.PI * 2);
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
                     ctx.fill();
                     ctx.restore();
@@ -2327,7 +2421,7 @@
 
                 // Start
                 render();
-                console.log('Liquid Glass Cursor V17 - Visible glass distortion with subtle tint + RGB split');
+                console.log('Liquid Glass Cursor V18 - BUBBLE: thin film interference + fresnel + iridescent rainbow');
             })();
         }
 
