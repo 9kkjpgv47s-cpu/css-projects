@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.5 - Prominent mobile shapes -->
+<!-- v2.6 - Shapes closer to text -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1832,14 +1832,16 @@
 
             function updateProtectedZones() {
                 protectedZones = [];
-                const textElements = document.querySelectorAll('h1, h2, h3, p, .btn, .logo, .nav-links, .result-number, .result-label, .tier-name, .tier-tagline');
+                // Only protect key headings, not all text - let shapes get close
+                const textElements = document.querySelectorAll('h1, h2, .logo');
                 textElements.forEach(el => {
                     const rect = el.getBoundingClientRect();
+                    // Minimal padding - shapes can get very close
                     protectedZones.push({
-                        x: rect.left - 20,
-                        y: rect.top + window.scrollY - 20,
-                        width: rect.width + 40,
-                        height: rect.height + 40
+                        x: rect.left - 5,
+                        y: rect.top + window.scrollY - 5,
+                        width: rect.width + 10,
+                        height: rect.height + 10
                     });
                 });
             }
