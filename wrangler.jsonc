@@ -1,4 +1,10 @@
 {
   "name": "cssolutions",
-  "pages_build_output_dir": "./"
+  "pages_build_output_dir": "./",
+  "kv_namespaces": [
+    {
+      "binding": "BOOKINGS",
+      "id": "22ef9dc08d204b3693bdb27da7aff477"
+    }
+  ]
 }
