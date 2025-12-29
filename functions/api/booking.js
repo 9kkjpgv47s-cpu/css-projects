@@ -115,39 +115,50 @@ export async function onRequestPost(context) {
         `;
 
         // Send email via Resend
+        const ADMIN_EMAIL = 'DEasterling@cssolutions.services';
         let emailError = null;
         let emailResult = null;
+        let apiKeyPresent = !!env.RESEND_API_KEY;
 
-        try {
-            const emailResponse = await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    from: 'Catalyst Strategy Solutions <bookings@cssolutions.services>',
-                    to: ['DEasterling@cssolutions.services'],
-                    subject: `New Booking Request: ${data.name} - ${formattedDate}`,
-                    html: emailHtml
-                })
-            });
+        console.log('Starting email send, API key present:', apiKeyPresent);
 
-            emailResult = await emailResponse.text();
+        if (!apiKeyPresent) {
+            emailError = 'RESEND_API_KEY not configured';
+        } else {
+            try {
+                console.log('Calling Resend API...');
+                const emailResponse = await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        from: 'Catalyst Strategy Solutions <bookings@cssolutions.services>',
+                        to: [ADMIN_EMAIL],
+                        subject: `New Booking Request: ${data.name} - ${formattedDate}`,
+                        html: emailHtml
+                    })
+                });
 
-            if (!emailResponse.ok) {
-                emailError = `Email failed (${emailResponse.status}): ${emailResult}`;
-                console.error(emailError);
+                emailResult = await emailResponse.text();
+                console.log('Resend response status:', emailResponse.status);
+                console.log('Resend response body:', emailResult);
+
+                if (!emailResponse.ok) {
+                    emailError = `Email failed (${emailResponse.status}): ${emailResult}`;
+                }
+            } catch (e) {
+                emailError = `Email exception: ${e.message}`;
+                console.error('Email send exception:', e);
             }
-        } catch (e) {
-            emailError = `Email exception: ${e.message}`;
-            console.error(emailError);
         }
 
         return new Response(JSON.stringify({
             success: true,
             message: 'Booking request submitted successfully',
             bookingId,
+            apiKeyPresent,
             emailStatus: emailError ? 'failed' : 'sent',
             emailDebug: emailError || emailResult
         }), {
