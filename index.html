@@ -1177,6 +1177,127 @@
         }
 
         /* ============================================
+           BOOKING FORM STYLES
+           ============================================ */
+        .booking-form {
+            max-width: 600px;
+            margin: 1.5rem auto 0;
+            text-align: left;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.75rem 1rem;
+            background: rgba(52, 52, 72, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+
+        .form-group select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .booking-form .btn {
+            width: 100%;
+            justify-content: center;
+            margin-top: 0.5rem;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .booking-form .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-message {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .form-message.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        .form-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================
            FOOTER
            ============================================ */
         footer {
@@ -1414,7 +1535,7 @@
     <section class="hero">
         <h1 class="text-reveal">You built something real. Now build the operation to match.</h1>
         <p>Your skills, your vision, your years of showing up—that's what got you here. We're here to build around what you've created, so it can grow without everything running through you.</p>
-        <a href="https://calendly.com/domje0624" class="btn">Schedule a Conversation</a>
+        <a href="#cta" class="btn">Schedule a Conversation</a>
         <div class="scroll-indicator">Scroll</div>
     </section>
 
@@ -1584,13 +1705,97 @@
     </section>
 
     <!-- ============================================
-         CTA SECTION
+         BOOKING SECTION
          ============================================ -->
     <section class="cta" id="cta">
         <div class="container">
             <h2 class="reveal">Ready to build what comes next?</h2>
-            <p class="reveal">One conversation. No pitch, no pressure—just a chance to talk about where you are and where you want to go. If we can help, we'll tell you how. If we can't, we'll tell you that too.</p>
-            <a href="https://calendly.com/domje0624" class="btn reveal">Schedule a Conversation</a>
+            <p class="reveal">One conversation. No pitch, no pressure—just a chance to talk about where you are and where you want to go.</p>
+
+            <form class="booking-form reveal" id="bookingForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input type="text" id="name" name="name" required placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label for="business">Business Name</label>
+                        <input type="text" id="business" name="business" placeholder="Your company">
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required placeholder="your@email.com">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">Preferred Date *</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">Preferred Time *</label>
+                        <select id="time" name="time" required>
+                            <option value="">Select a time</option>
+                            <option value="09:00">9:00 AM</option>
+                            <option value="09:30">9:30 AM</option>
+                            <option value="10:00">10:00 AM</option>
+                            <option value="10:30">10:30 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="11:30">11:30 AM</option>
+                            <option value="12:00">12:00 PM</option>
+                            <option value="12:30">12:30 PM</option>
+                            <option value="13:00">1:00 PM</option>
+                            <option value="13:30">1:30 PM</option>
+                            <option value="14:00">2:00 PM</option>
+                            <option value="14:30">2:30 PM</option>
+                            <option value="15:00">3:00 PM</option>
+                            <option value="15:30">3:30 PM</option>
+                            <option value="16:00">4:00 PM</option>
+                            <option value="16:30">4:30 PM</option>
+                            <option value="17:00">5:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="duration">Duration *</label>
+                        <select id="duration" name="duration" required>
+                            <option value="">Select duration</option>
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reason">Reason for Reaching Out *</label>
+                        <select id="reason" name="reason" required>
+                            <option value="">Select a reason</option>
+                            <option value="New Project">New Project</option>
+                            <option value="Partnership">Partnership</option>
+                            <option value="General Inquiry">General Inquiry</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="notes">Additional Notes</label>
+                        <textarea id="notes" name="notes" placeholder="Tell us a bit about what you'd like to discuss..."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Request Consultation</button>
+
+                <div id="formMessage" class="form-message"></div>
+            </form>
+
             <p class="cta-email reveal">Or reach out directly: <a href="mailto:DEasterling@cssolutions.services">DEasterling@cssolutions.services</a></p>
         </div>
     </section>
@@ -1668,6 +1873,82 @@
                 }
             });
         });
+
+        // ============================================
+        // BOOKING FORM FUNCTIONALITY
+        // ============================================
+
+        // Set minimum date to today
+        const dateInput = document.getElementById('date');
+        if (dateInput) {
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setMonth(maxDate.getMonth() + 1); // 1 month out
+
+            dateInput.min = today.toISOString().split('T')[0];
+            dateInput.max = maxDate.toISOString().split('T')[0];
+        }
+
+        // Handle form submission
+        const bookingForm = document.getElementById('bookingForm');
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const messageDiv = document.getElementById('formMessage');
+                const originalText = submitBtn.textContent;
+
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+                messageDiv.className = 'form-message';
+                messageDiv.style.display = 'none';
+
+                // Gather form data
+                const formData = {
+                    name: document.getElementById('name').value,
+                    business: document.getElementById('business').value,
+                    email: document.getElementById('email').value,
+                    date: document.getElementById('date').value,
+                    time: document.getElementById('time').value,
+                    duration: document.getElementById('duration').value,
+                    reason: document.getElementById('reason').value,
+                    notes: document.getElementById('notes').value
+                };
+
+                try {
+                    const response = await fetch('/api/booking', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        messageDiv.className = 'form-message success';
+                        messageDiv.textContent = 'Request submitted! You\'ll receive a confirmation email once approved.';
+                        messageDiv.style.display = 'block';
+                        bookingForm.reset();
+                        // Reset date constraints
+                        if (dateInput) {
+                            const today = new Date();
+                            dateInput.min = today.toISOString().split('T')[0];
+                        }
+                    } else {
+                        throw new Error(result.error || 'Something went wrong');
+                    }
+                } catch (error) {
+                    messageDiv.className = 'form-message error';
+                    messageDiv.textContent = error.message || 'Failed to submit. Please try again or email us directly.';
+                    messageDiv.style.display = 'block';
+                }
+
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        }
 
         // ============================================
         // UNIFIED CAROUSEL FUNCTIONALITY
