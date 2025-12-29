@@ -100,7 +100,7 @@ export async function onRequestGet(context) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                from: 'Catalyst Strategy Solutions <bookings@send.cssolutions.services>',
+                from: 'Catalyst Strategy Solutions <bookings@cssolutions.services>',
                 to: [booking.email],
                 subject: `Meeting Confirmed - ${formattedDate} at ${formattedTime}`,
                 html: confirmationHtml,

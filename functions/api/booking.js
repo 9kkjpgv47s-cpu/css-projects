@@ -126,7 +126,7 @@ export async function onRequestPost(context) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    from: 'Catalyst Strategy Solutions <bookings@send.cssolutions.services>',
+                    from: 'Catalyst Strategy Solutions <bookings@cssolutions.services>',
                     to: ['DEasterling@cssolutions.services'],
                     subject: `New Booking Request: ${data.name} - ${formattedDate}`,
                     html: emailHtml
