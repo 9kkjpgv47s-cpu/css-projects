@@ -115,29 +115,41 @@ export async function onRequestPost(context) {
         `;
 
         // Send email via Resend
-        const emailResponse = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: 'Catalyst Strategy Solutions <bookings@send.cssolutions.services>',
-                to: ['DEasterling@cssolutions.services'],
-                subject: `New Booking Request: ${data.name} - ${formattedDate}`,
-                html: emailHtml
-            })
-        });
+        let emailError = null;
+        let emailResult = null;
 
-        if (!emailResponse.ok) {
-            console.error('Email send failed:', await emailResponse.text());
-            // Still return success - booking is saved, email can be retried
+        try {
+            const emailResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: 'Catalyst Strategy Solutions <bookings@send.cssolutions.services>',
+                    to: ['DEasterling@cssolutions.services'],
+                    subject: `New Booking Request: ${data.name} - ${formattedDate}`,
+                    html: emailHtml
+                })
+            });
+
+            emailResult = await emailResponse.text();
+
+            if (!emailResponse.ok) {
+                emailError = `Email failed (${emailResponse.status}): ${emailResult}`;
+                console.error(emailError);
+            }
+        } catch (e) {
+            emailError = `Email exception: ${e.message}`;
+            console.error(emailError);
         }
 
         return new Response(JSON.stringify({
             success: true,
             message: 'Booking request submitted successfully',
-            bookingId
+            bookingId,
+            emailStatus: emailError ? 'failed' : 'sent',
+            emailDebug: emailError || emailResult
         }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
