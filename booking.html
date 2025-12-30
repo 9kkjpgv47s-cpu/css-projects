@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Schedule a Consultation - Catalyst Strategy Solutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1f1f2e;
+            --bg-secondary: #2a2a3a;
+            --bg-card: #343448;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a0a0a8;
+            --text-muted: #6b6b75;
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-color-hover: rgba(255, 255, 255, 0.15);
+            --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Background gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 30%, rgba(99, 102, 241, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container { max-width: 700px; margin: 0 auto; padding: 0 1.5rem; width: 100%; }
+
+        /* Navigation */
+        nav {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+        }
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-link:hover { color: var(--accent-blue); }
+
+        /* Main content */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .booking-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .booking-header h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            margin-bottom: 0.75rem;
+        }
+        .booking-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Form Styles */
+        .booking-form { text-align: left; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .form-row.full { grid-template-columns: 1fr; }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.75rem 1rem;
+            background: rgba(52, 52, 72, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .form-group input::placeholder,
+        .form-group textarea::placeholder { color: var(--text-muted); }
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+        .form-group select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 1rem;
+            background: var(--gradient-blue);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+            margin-top: 0.5rem;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .form-message {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+        .form-message.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+        .form-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .contact-alt {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .contact-alt a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        .contact-alt a:hover { color: var(--accent-blue); }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+            text-align: center;
+        }
+        footer .container { max-width: 1200px; }
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .footer-logo svg { width: 32px; height: 32px; }
+        .footer-logo-text { font-weight: 600; font-size: 0.95rem; }
+        .footer-contact { display: flex; gap: 1.5rem; }
+        .footer-contact a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .footer-contact a:hover { color: var(--accent-blue); }
+        .footer-bottom {
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .footer-content { flex-direction: column; text-align: center; }
+            .footer-contact { flex-direction: column; gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="index.html" class="logo">Catalyst Strategy Solutions</a>
+            <a href="index.html" class="back-link">&larr; Back to Home</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="booking-header">
+                <h1>Schedule a Consultation</h1>
+                <p>No pitch, no pressure—just a chance to talk about where you are and where you want to go.</p>
+            </div>
+
+            <form class="booking-form" id="bookingForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input type="text" id="name" name="name" required placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label for="business">Business Name</label>
+                        <input type="text" id="business" name="business" placeholder="Your company">
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required placeholder="your@email.com">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">Preferred Date *</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">Preferred Time *</label>
+                        <select id="time" name="time" required>
+                            <option value="">Select a time</option>
+                            <option value="09:00">9:00 AM</option>
+                            <option value="09:30">9:30 AM</option>
+                            <option value="10:00">10:00 AM</option>
+                            <option value="10:30">10:30 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="11:30">11:30 AM</option>
+                            <option value="12:00">12:00 PM</option>
+                            <option value="12:30">12:30 PM</option>
+                            <option value="13:00">1:00 PM</option>
+                            <option value="13:30">1:30 PM</option>
+                            <option value="14:00">2:00 PM</option>
+                            <option value="14:30">2:30 PM</option>
+                            <option value="15:00">3:00 PM</option>
+                            <option value="15:30">3:30 PM</option>
+                            <option value="16:00">4:00 PM</option>
+                            <option value="16:30">4:30 PM</option>
+                            <option value="17:00">5:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="duration">Duration *</label>
+                        <select id="duration" name="duration" required>
+                            <option value="">Select duration</option>
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reason">Reason for Reaching Out *</label>
+                        <select id="reason" name="reason" required>
+                            <option value="">Select a reason</option>
+                            <option value="New Project">New Project</option>
+                            <option value="Partnership">Partnership</option>
+                            <option value="General Inquiry">General Inquiry</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="notes">Additional Notes</label>
+                        <textarea id="notes" name="notes" placeholder="Tell us a bit about what you'd like to discuss..."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Request Consultation</button>
+                <div id="formMessage" class="form-message"></div>
+            </form>
+
+            <p class="contact-alt">Or reach out directly: <a href="mailto:DEasterling@cssolutions.services">DEasterling@cssolutions.services</a></p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 4C20 4 12 14 12 22C12 28 15.6 32 20 34C20 34 16 28 18 22C20 16 26 14 26 14C26 14 22 18 22 24C22 28 24 30 24 30C28 28 30 24 30 20C30 12 20 4 20 4Z" fill="url(#flame-gradient-footer)"/>
+                        <path d="M18 22C16 28 20 34 20 34C15.6 32 12 28 12 22C12 14 20 4 20 4C20 4 14 14 18 22Z" fill="#6B7280"/>
+                        <defs>
+                            <linearGradient id="flame-gradient-footer" x1="20" y1="4" x2="20" y2="34" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#3b82f6"/>
+                                <stop offset="1" stop-color="#1d4ed8"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="footer-logo-text">Catalyst Strategy Solutions</span>
+                </div>
+                <div class="footer-contact">
+                    <a href="mailto:DEasterling@cssolutions.services">DEasterling@cssolutions.services</a>
+                    <a href="tel:+17604214397">(760) 421-4397</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2025 Catalyst Strategy Solutions. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Set date constraints
+        const dateInput = document.getElementById('date');
+        if (dateInput) {
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setMonth(maxDate.getMonth() + 1);
+            dateInput.min = today.toISOString().split('T')[0];
+            dateInput.max = maxDate.toISOString().split('T')[0];
+        }
+
+        // Form submission
+        const bookingForm = document.getElementById('bookingForm');
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const messageDiv = document.getElementById('formMessage');
+                const originalText = submitBtn.textContent;
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+                messageDiv.className = 'form-message';
+                messageDiv.style.display = 'none';
+
+                const formData = {
+                    name: document.getElementById('name').value,
+                    business: document.getElementById('business').value,
+                    email: document.getElementById('email').value,
+                    date: document.getElementById('date').value,
+                    time: document.getElementById('time').value,
+                    duration: document.getElementById('duration').value,
+                    reason: document.getElementById('reason').value,
+                    notes: document.getElementById('notes').value
+                };
+
+                try {
+                    const response = await fetch('/api/booking', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        messageDiv.className = 'form-message success';
+                        messageDiv.textContent = 'Request submitted! You\'ll receive a confirmation email once approved.';
+                        messageDiv.style.display = 'block';
+                        bookingForm.reset();
+                        if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
+                    } else {
+                        throw new Error(result.error || 'Something went wrong');
+                    }
+                } catch (error) {
+                    messageDiv.className = 'form-message error';
+                    messageDiv.textContent = error.message || 'Failed to submit. Please try again.';
+                    messageDiv.style.display = 'block';
+                }
+
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        }
+    </script>
+</body>
+</html>

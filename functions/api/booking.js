@@ -104,7 +104,7 @@ export async function onRequestPost(context) {
             ${data.notes ? `<div class="notes"><span class="label">Notes:</span><br>${data.notes}</div>` : ''}
         </div>
 
-        <a href="${approveUrl}" class="approve-btn">Approve This Booking</a>
+        <a href="${approveUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 20px 0;">Approve This Booking</a>
 
         <p style="color: #666; font-size: 14px; margin-top: 30px;">
             Clicking approve will send a confirmation email to ${data.email}
