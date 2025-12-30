@@ -1769,16 +1769,26 @@
          JAVASCRIPT
          ============================================ -->
     <script>
-        // Mobile navigation toggle
-        function toggleNav() {
+        // Navigation toggle
+        function toggleNav(event) {
+            if (event) event.stopPropagation();
             document.querySelector('.nav-links').classList.toggle('active');
         }
 
-        // Close mobile nav when clicking a link
+        // Close nav when clicking a link
         document.querySelectorAll('.nav-links a').forEach(link => {
             link.addEventListener('click', () => {
                 document.querySelector('.nav-links').classList.remove('active');
             });
+        });
+
+        // Close nav when clicking outside
+        document.addEventListener('click', (event) => {
+            const navLinks = document.querySelector('.nav-links');
+            const navToggle = document.querySelector('.nav-toggle');
+            if (!navLinks.contains(event.target) && !navToggle.contains(event.target)) {
+                navLinks.classList.remove('active');
+            }
         });
 
         // Scroll reveal animation
