@@ -61,6 +61,7 @@
             justify-content: space-between;
             align-items: center;
             max-width: 1200px;
+            position: relative;
         }
         .logo {
             font-size: 1.1rem;
@@ -68,15 +69,47 @@
             color: var(--text-primary);
             text-decoration: none;
         }
-        .back-link {
+        .nav-links {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            padding: 1.5rem 2rem;
+            gap: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            list-style: none;
+            min-width: 200px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        .nav-links.active { display: flex; }
+        .nav-links a {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
         }
-        .back-link:hover { color: var(--accent-blue); }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-links .nav-schedule-btn { color: var(--accent-blue); font-weight: 600; }
+        .nav-toggle {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+        }
+        .nav-toggle:hover { background: rgba(255, 255, 255, 0.05); }
+        .nav-toggle span {
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            transition: 0.3s;
+        }
 
         /* Main content */
         main {
@@ -256,7 +289,17 @@
     <nav>
         <div class="container">
             <a href="index.html" class="logo">Catalyst Strategy Solutions</a>
-            <a href="index.html" class="back-link">&larr; Back to Home</a>
+            <div class="nav-toggle" onclick="toggleNav()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="services.html">Services</a></li>
+                <li><a href="founder.html">Meet the Founder</a></li>
+                <li><a href="booking.html" class="nav-schedule-btn active">Schedule</a></li>
+            </ul>
         </div>
     </nav>
 
@@ -382,6 +425,11 @@
     </footer>
 
     <script>
+        // Navigation toggle
+        function toggleNav() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+
         // Set date constraints
         const dateInput = document.getElementById('date');
         if (dateInput) {
